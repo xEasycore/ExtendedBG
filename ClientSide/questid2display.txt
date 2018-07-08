@@ -1,0 +1,3 @@
+8600#Battlegrounds Cooldown#SG_FEEL#QUE_NOIMAGE#
+You are a Deserter. You can't participate until the indicator goes off.#
+Bring the required materials#

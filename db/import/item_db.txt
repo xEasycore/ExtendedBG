@@ -1,0 +1,8 @@
+// Items Additional Database
+//
+// Structure of Database:
+// ID,Name,Name,Type,Price,Sell,Weight,ATK[:MATK],DEF,Range,Slot,Job,Class,Gender,Loc,wLV,eLV[:maxLevel],Refineable,View,{ Script },{ OnEquip_Script },{ OnUnequip_Script }
+
+8965,Blue_Skull,Blue Skull,3,,10,0,,,,,,,,,,,,,{},{},{}
+8966,Red_Skull,Red Skull,3,,10,0,,,,,,,,,,,,,{},{},{}
+8967,Green_Skull,Green Skull,3,,10,0,,,,,,,,,,,,,{},{},{}
