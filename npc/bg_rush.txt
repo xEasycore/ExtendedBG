@@ -66,16 +66,16 @@ OnReady:
 	switch( .Index )
 	{
 	case 0: // =========================================================================
-		bg_monster 0,.Castle$,158,174,"Emperium",2107,"Rush::OnEmperium";
+		bg_monster 0,.Castle$,158,174,"Emperium",20402,"Rush::OnEmperium";
 		break;
 	case 1: // =========================================================================
-		bg_monster 0,.Castle$,271,29,"Emperium",2107,"Rush::OnEmperium";
+		bg_monster 0,.Castle$,271,29,"Emperium",20402,"Rush::OnEmperium";
 		break;
 	case 2: // =========================================================================
-		bg_monster 0,.Castle$,28,102,"Emperium",2107,"Rush::OnEmperium";
+		bg_monster 0,.Castle$,28,102,"Emperium",20402,"Rush::OnEmperium";
 		break;
 	case 3: // =========================================================================
-		bg_monster 0,.Castle$,245,167,"Emperium",2107,"Rush::OnEmperium";
+		bg_monster 0,.Castle$,245,167,"Emperium",20402,"Rush::OnEmperium";
 		break;
 	}
 	// ======================================
@@ -139,16 +139,16 @@ OnEmperium:
 		switch( .Index )
 		{
 		case 0: // =========================================================================
-			bg_monster .Defender,.Castle$,158,174,"Emperium",2107,"Rush::OnEmperium";
+			bg_monster .Defender,.Castle$,158,174,"Emperium",20402,"Rush::OnEmperium";
 			break;
 		case 1: // =========================================================================
-			bg_monster .Defender,.Castle$,271,29,"Emperium",2107,"Rush::OnEmperium";
+			bg_monster .Defender,.Castle$,271,29,"Emperium",20402,"Rush::OnEmperium";
 			break;
 		case 2: // =========================================================================
-			bg_monster .Defender,.Castle$,28,102,"Emperium",2107,"Rush::OnEmperium";
+			bg_monster .Defender,.Castle$,28,102,"Emperium",20402,"Rush::OnEmperium";
 			break;
 		case 3: // =========================================================================
-			bg_monster .Defender,.Castle$,245,167,"Emperium",2107,"Rush::OnEmperium";
+			bg_monster .Defender,.Castle$,245,167,"Emperium",20402,"Rush::OnEmperium";
 			break;
 		}
 		// ======================================

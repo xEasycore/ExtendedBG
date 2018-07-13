@@ -118,8 +118,8 @@ OnReady:
 		bg_monster .Defender,.Castle$,120,240," ",1906,"Conquest::OnBarricade3";
 		bg_monster .Defender,.Castle$,122,240," ",1906,"Conquest::OnBarricade3";
 
-		bg_monster .Defender,.Castle$,27,35,"1st Guardian Stone",2105,"Conquest::OnGuardianStone1";
-		bg_monster .Defender,.Castle$,207,75,"2st Guardian Stone",2106,"Conquest::OnGuardianStone2";
+		bg_monster .Defender,.Castle$,27,35,"1st Guardian Stone",20400,"Conquest::OnGuardianStone1";
+		bg_monster .Defender,.Castle$,207,75,"2st Guardian Stone",20401,"Conquest::OnGuardianStone2";
 
 		bg_monster .Defender,.Castle$,120,272,"Emperium",2107,"Conquest::OnEmperium";
 		break;
@@ -153,8 +153,8 @@ OnReady:
 		bg_monster .Defender,.Castle$,164,140," ",1906,"Conquest::OnBarricade3";
 		bg_monster .Defender,.Castle$,166,140," ",1906,"Conquest::OnBarricade3";
 
-		bg_monster .Defender,.Castle$,231,58,"1st Guardian Stone",2105,"Conquest::OnGuardianStone1";
-		bg_monster .Defender,.Castle$,335,230,"2nd Guardian Stone",2106,"Conquest::OnGuardianStone2";
+		bg_monster .Defender,.Castle$,231,58,"1st Guardian Stone",20400,"Conquest::OnGuardianStone1";
+		bg_monster .Defender,.Castle$,335,230,"2nd Guardian Stone",20401,"Conquest::OnGuardianStone2";
 
 		bg_monster .Defender,.Castle$,162,193,"Emperium",2107,"Conquest::OnEmperium";
 		break;
@@ -187,8 +187,8 @@ OnReady:
 		bg_monster .Defender,.Castle$,284,203," ",1906,"Conquest::OnBarricade3";
 		bg_monster .Defender,.Castle$,284,205," ",1906,"Conquest::OnBarricade3";
 
-		bg_monster .Defender,.Castle$,242,309,"1st Guardian Stone",2105,"Conquest::OnGuardianStone1";
-		bg_monster .Defender,.Castle$,376,251,"2nd Guardian Stone",2106,"Conquest::OnGuardianStone2";
+		bg_monster .Defender,.Castle$,242,309,"1st Guardian Stone",20400,"Conquest::OnGuardianStone1";
+		bg_monster .Defender,.Castle$,376,251,"2nd Guardian Stone",20401,"Conquest::OnGuardianStone2";
 
 		bg_monster .Defender,.Castle$,338,202,"Emperium",2107,"Conquest::OnEmperium";
 		break;
@@ -222,8 +222,8 @@ OnReady:
 		bg_monster .Defender,.Castle$,88,170," ",1906,"Conquest::OnBarricade3";
 		bg_monster .Defender,.Castle$,90,170," ",1906,"Conquest::OnBarricade3";
 
-		bg_monster .Defender,.Castle$,210,234,"1st Guardian Stone",2105,"Conquest::OnGuardianStone1";
-		bg_monster .Defender,.Castle$,308,189,"2nd Guardian Stone",2106,"Conquest::OnGuardianStone2";
+		bg_monster .Defender,.Castle$,210,234,"1st Guardian Stone",20400,"Conquest::OnGuardianStone1";
+		bg_monster .Defender,.Castle$,308,189,"2nd Guardian Stone",20401,"Conquest::OnGuardianStone2";
 
 		bg_monster .Defender,.Castle$,87,219,"Emperium",2107,"Conquest::OnEmperium";
 		break;
@@ -257,8 +257,8 @@ OnReady:
 		bg_monster .Defender,.Castle$,44,315," ",1906,"Conquest::OnBarricade3";
 		bg_monster .Defender,.Castle$,46,315," ",1906,"Conquest::OnBarricade3";
 
-		bg_monster .Defender,.Castle$,33,168,"1st Guardian Stone",2105,"Conquest::OnGuardianStone1";
-		bg_monster .Defender,.Castle$,245,168,"2nd Guardian Stone",2106,"Conquest::OnGuardianStone2";
+		bg_monster .Defender,.Castle$,33,168,"1st Guardian Stone",20400,"Conquest::OnGuardianStone1";
+		bg_monster .Defender,.Castle$,245,168,"2nd Guardian Stone",20401,"Conquest::OnGuardianStone2";
 
 		bg_monster .Defender,.Castle$,89,256,"Emperium",2107,"Conquest::OnEmperium";
 		break;
@@ -292,8 +292,8 @@ OnReady:
 		bg_monster .Defender,.Castle$,143,262," ",1906,"Conquest::OnBarricade3";
 		bg_monster .Defender,.Castle$,145,262," ",1906,"Conquest::OnBarricade3";
 
-		bg_monster .Defender,.Castle$,65,171,"1st Guardian Stone",2105,"Conquest::OnGuardianStone1";
-		bg_monster .Defender,.Castle$,212,149,"2nd Guardian Stone",2106,"Conquest::OnGuardianStone2";
+		bg_monster .Defender,.Castle$,65,171,"1st Guardian Stone",20400,"Conquest::OnGuardianStone1";
+		bg_monster .Defender,.Castle$,212,149,"2nd Guardian Stone",20401,"Conquest::OnGuardianStone2";
 
 		bg_monster .Defender,.Castle$,141,293,"Emperium",2107,"Conquest::OnEmperium";
 		break;
