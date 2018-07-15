@@ -150,6 +150,7 @@ bat_c01	mapflag	nowarpto
 bat_c01	mapflag	noreturn
 bat_c01	mapflag	nobranch
 bat_c01	mapflag	nopenalty
+bat_c01	mapflag	bg_consume
 
 // Battleground Therapist
 // *********************************************************************
