@@ -24,16 +24,16 @@ OnInit:
 	// Configuration
 	// *****************************************************
 	// Battleground Rotation - Main NPC name
-	setarray .BG_Arenas$[0],		"Flavius_CTF",		"Flavius_TD",		"Conquest",		"Rush",		"Tierra_TI",		"Tierra_EOS",		"Tierra_DOM";
+	setarray .BG_Arenas$[0],		"Flavius_CTF",		"Flavius_TD",			"Conquest",		"Rush",		"Tierra_TI",			"Tierra_EOS",		"Tierra_DOM",		"Tierra_Boss",	"Flavius_SC";
 	// Battleground Arena Name - for announcements
-	setarray .BG_Names$[0],		"Capture the Flag",		"Team DeathMatch",		"Conquest",		"Rush",		"Triple Inferno",		"Eye of Storm",		"Domination";
+	setarray .BG_Names$[0],		"Capture the Flag",	"Team DeathMatch",		"Conquest",		"Rush",		"Triple Inferno",		"Eye of Storm",		"Domination",		"Bossnia",		"Stone Control";
 	// Minimum Players to start the BG
-	setarray .BG_Min[0],	              1,               1,                1,            1,            1,            1,            1;
+	setarray .BG_Min[0],	              1,               1,                1,            1,            1,                  1,             1,             1,          1;
 	// Maximum Players per Team
-	setarray .BG_Max[0],	             50,              50,               50,           50,           50,           50,           50;
+	setarray .BG_Max[0],	             50,              50,               50,           50,           50,                  50,            50,           50,          50;
 	// BG Message Colors
-	setarray .BG_Color$[0],	                "0xA0522D",    "0x808000",      "0xFFA500",       "0xDDA0DD",		"0x696969",		"0x4169E1",		"0x4169E1";
-	setarray .BG_Color2[0],	                0xA0522D,    0x808000,      0xFFA500,       0xDDA0DD,		0x696969,		0x4169E1,		0x4169E1;
+	setarray .BG_Color$[0],	                "0xA0522D",    "0x808000",      "0xFFA500",       "0xDDA0DD",		"0x696969",		"0x4169E1",		"0x4169E1",		"0x3399FF",		"0x9ACD32";
+	setarray .BG_Color2[0],	                0xA0522D,    0x808000,      0xFFA500,       0xDDA0DD,		0x696969,		0x4169E1,		0x4169E1,		0x3399FF,		0x9ACD32;
 	// Team Building Mode : 0 = Lineal | 1 = Random | 2 = Class Priority | 3 = Faction Mode | 4 = Team Color ( by script set Bat_Team,N; )
 	set .TeamMode, 2;
 	// Main Code
