@@ -226,7 +226,7 @@ OnMatchEnd:
 	donpcevent "BG_Queue_Join::OnEndArena";
 	bg_updatescore "bat_a02",0,0;
 	donpcevent "GEoSNBW::OnDisable";
-	donpcevent "GEoSCBW::OnDisable";
+	//donpcevent "GEoSCBW::OnDisable";
 	donpcevent "GEoSSBW::OnDisable";
 	donpcevent "CEoSNBW::OnDisable";
 	donpcevent "CEoSCBW::OnDisable";

@@ -18,7 +18,7 @@
 
 OnGuillaumeQuit:
 OnCroixQuit:
-	setquest 8506; // Deserter
+	setquest 8600; // Deserter
 	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_Boss")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 	end;

@@ -18,7 +18,7 @@
 
 OnGuillaumeQuit:
 OnCroixQuit:
-	setquest 8506; // Deserter
+	setquest 8600; // DeserterDeserter
 	set @killer_bg_src,0;
 	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_SC")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
