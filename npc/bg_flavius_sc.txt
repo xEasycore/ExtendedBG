@@ -26,7 +26,7 @@ OnGuillaumeDie:
 OnCroixDie:
 	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_SC" && set(.@Stone,callfunc("SC_StoneCheck",getcharid(0))) > 0) { // Stone Carrier
 		set .Stone[.@Stone],0;
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Neutral Stone#" + .@Stone, .@x, .@y;
 		mapannounce "bat_b04","Neutral Stone Dropped by [ " + strcharinfo(0) + " ]",1,0xFFFFFF;
 		initnpctimer "Neutral Stone#" + .@Stone;
@@ -136,7 +136,7 @@ OnMatchEnd:
 
 OnFlash:
 	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_SC" && set(.@Stone,callfunc("SC_StoneCheck",getcharid(0))) > 0) {
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		if (getcharid(4) == $@BG_Team1)
 			viewpointmap "bat_b04",1, .@x, .@y, .@Stone, 0x0000FF;
 		else if (getcharid(4) == $@BG_Team2)
@@ -196,7 +196,7 @@ OnBGStart:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, atoi(strnpcinfo(2)), 0xFFFFFF;
 	end;
 
@@ -258,7 +258,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0xFF0000;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -316,7 +316,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0xFF0000;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -374,7 +374,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0xFF0000;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -432,7 +432,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0xFF0000;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -490,7 +490,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0xFF0000;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -548,7 +548,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0xFF0000;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -609,7 +609,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0x0000FF;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -667,7 +667,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0x0000FF;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -725,7 +725,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0x0000FF;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -783,7 +783,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0x0000FF;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -841,7 +841,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0x0000FF;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {
@@ -899,7 +899,7 @@ OnTouch:
 
 OnTimer2000:
 	initnpctimer;
-	getmapxy .@m$, .@x, .@y, 1;
+	getmapxy .@m$, .@x, .@y, BL_NPC;
 	viewpointmap "bat_b04",1, .@x, .@y, .Point, 0x0000FF;
 	specialeffect 223;
 	if (set(.Count, .Count + 1) >= 5) {

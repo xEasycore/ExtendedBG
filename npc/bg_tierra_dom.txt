@@ -40,7 +40,7 @@ OnDie:
 		end;
 
 	set .@Base, 0;
-	getmapxy .@m$, .@x, .@y, 0;
+	getmapxy .@m$, .@x, .@y, BL_PC;
 
 	if( .@x >= 136 && .@y >= 329 && .@x <= 186 && .@y <= 361 )
 		set .@Base, getvariableofnpc(.Owner,"Dom_N_Base"); // North

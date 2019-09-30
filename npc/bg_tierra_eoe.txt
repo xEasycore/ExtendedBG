@@ -29,7 +29,7 @@ OnTeam1Die:
 	{ // Drop Flag
 		//pcblock 1,0; // UnBlock Skills/Items
 		pcblockskill getcharid(3),0;
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Neutral_Flag", .@x, .@y;
 		mapannounce "bat_a02",bg_get_data($@BG_Team1,2) + " have droped the Flag",1,0xFFFFFF;
 		//bg_rankpoints "fame",1,@killer_bg_src;
@@ -50,7 +50,7 @@ OnTeam2Die:
 	{ // Drop Flag
 		//pcblock 1,0; // UnBlock Skills/Items
 		pcblockskill getcharid(3),0;
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Neutral_Flag", .@x, .@y;
 		mapannounce "bat_a02",bg_get_data($@BG_Team2,2) + " have droped the Flag",1,0xFFFFFF;
 		//bg_rankpoints "fame",1,@killer_bg_src;
@@ -91,7 +91,7 @@ OnReady:
 OnFlash:
 	if( getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" )
 	{
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		viewpointmap "bat_a02",1,.@x,.@y,3,0xFFFFFF;
 		specialeffect 73;
 		emotion ET_HELP,getcharid(3);
@@ -306,7 +306,7 @@ OnTimer2000:
 	stopnpctimer;
 	if( .Flag_Status == 0 && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" )
 	{
-		getmapxy .@m$, .@x, .@y, 1;
+		getmapxy .@m$, .@x, .@y, BL_NPC;
 		viewpointmap "bat_a02",1,.@x,.@y,3,0xFFFFFF;
 		specialeffect 223;
 		initnpctimer;

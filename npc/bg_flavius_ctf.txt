@@ -76,7 +76,7 @@ OnTimer2000:
 	stopnpctimer;
 	if( .Flag_Status < 2 )
 	{
-		getmapxy .@m$, .@x, .@y, 1;
+		getmapxy .@m$, .@x, .@y, BL_NPC;
 		viewpointmap "bat_b02",1, .@x, .@y, 1, bg_get_data($@BG_Team1,4);
 		specialeffect 223;
 		initnpctimer;
@@ -152,7 +152,7 @@ OnTimer2000:
 	stopnpctimer;
 	if( .Flag_Status < 2 )
 	{
-		getmapxy .@m$, .@x, .@y, 1;
+		getmapxy .@m$, .@x, .@y, BL_NPC;
 		viewpointmap "bat_b02",1, .@x, .@y, 2, bg_get_data($@BG_Team2,4);
 		specialeffect 223;
 		initnpctimer;
@@ -177,7 +177,7 @@ OnBase:
 OnAlphaFlash:
 	if( getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" )
 	{
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		viewpointmap "bat_b02",1, .@x, .@y, 1, bg_get_data($@BG_Team1,4);
 		specialeffect 73;
 		emotion ET_HELP,getcharid(3);
@@ -189,7 +189,7 @@ OnAlphaFlash:
 OnOmegaFlash:
 	if( getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" )
 	{
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		viewpointmap "bat_b02",1, .@x, .@y, 2, bg_get_data($@BG_Team2,4);
 		specialeffect 73;
 		emotion ET_HELP,getcharid(3);
@@ -214,7 +214,7 @@ OnTeam1Die:
 		set getvariableofnpc(.Flag_Carrier,"Team2_Flag"), 0;
 		//pcblock 1,0; // UnBlock Skills/Items
 		pcblockskill getcharid(3),0;
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Team2_Flag", .@x, .@y;
 		mapannounce "bat_b02","Omega Flag Droped by [ " + strcharinfo(0) + " ]",1,bg_get_data($@BG_Team2,4);
 		//bg_rankpoints "ctf_droped",1;
@@ -236,7 +236,7 @@ OnTeam2Die:
 		set getvariableofnpc(.Flag_Carrier,"Team1_Flag"), 0;
 		//pcblock 1,0; // UnBlock Skills/Items
 		pcblockskill getcharid(3),0;
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Team1_Flag", .@x, .@y;
 		mapannounce "bat_b02","Alpha Flag Droped by [ " + strcharinfo(0) + " ]",1,bg_get_data($@BG_Team1,4);
 		//bg_rankpoints "ctf_droped",1;
