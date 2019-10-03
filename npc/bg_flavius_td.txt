@@ -26,6 +26,7 @@ OnTeam1Quit:
 OnTeam1Die:
 	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD" )
 	{
+		if (killerrid == 0) end;
 		set .Team1_Score, .Team1_Score - 1;
 		donpcevent "Flavius_TD::OnValidateScore";
 	}
@@ -38,6 +39,7 @@ OnTeam2Quit:
 OnTeam2Die:
 	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD" )
 	{
+		if (killerrid == 0) end;
 		set .Team2_Score, .Team2_Score - 1;
 		donpcevent "Flavius_TD::OnValidateScore";
 	}
