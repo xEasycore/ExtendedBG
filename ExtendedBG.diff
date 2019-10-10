@@ -4,7 +4,7 @@
  src/map/atcommand.cpp         | 216 +++++++++++
  src/map/battle.cpp            |  11 +
  src/map/battle.hpp            |  11 +
- src/map/battleground.cpp      | 876 ++++++++++++++++++++++++++++++++++++++++--
+ src/map/battleground.cpp      | 879 ++++++++++++++++++++++++++++++++++++++++--
  src/map/battleground.hpp      |  61 ++-
  src/map/buyingstore.cpp       |   8 +-
  src/map/clif.cpp              | 324 ++++++++++++++--
@@ -14,14 +14,14 @@
  src/map/npc.hpp               |   2 +-
  src/map/pc.cpp                |  34 +-
  src/map/pc.hpp                |  17 +-
- src/map/script.cpp            | 876 +++++++++++++++++++++++++++++++++++++++++-
+ src/map/script.cpp            | 876 ++++++++++++++++++++++++++++++++++++++++-
  src/map/script_constants.hpp  |   5 +
  src/map/skill.cpp             |  71 +++-
  src/map/storage.cpp           |   8 +
  src/map/trade.cpp             |   8 +-
  src/map/unit.cpp              |   1 +
  src/map/vending.cpp           |   4 +
- 23 files changed, 2515 insertions(+), 110 deletions(-)
+ 23 files changed, 2518 insertions(+), 110 deletions(-)
 
 diff --git a/conf/battle/battleground.conf b/conf/battle/battleground.conf
 index f6ca66e30..c1886cd63 100644
@@ -401,7 +401,7 @@ index cffa0f363..634d1f4b3 100644
  #include "../custom/battle_config_struct.inc"
  };
 diff --git a/src/map/battleground.cpp b/src/map/battleground.cpp
-index 990c8dde8..55b9d4182 100644
+index 990c8dde8..d2c6b97da 100644
 --- a/src/map/battleground.cpp
 +++ b/src/map/battleground.cpp
 @@ -8,21 +8,50 @@
@@ -964,7 +964,7 @@ index 990c8dde8..55b9d4182 100644
  	}
  
  	return 0;
-@@ -267,6 +607,461 @@ TIMER_FUNC(bg_send_xy_timer){
+@@ -267,14 +607,473 @@ TIMER_FUNC(bg_send_xy_timer){
  	return 0;
  }
  
@@ -1426,7 +1426,13 @@ index 990c8dde8..55b9d4182 100644
  void do_init_battleground(void)
  {
  	bg_team_db = idb_alloc(DB_OPT_RELEASE_DATA);
-@@ -277,4 +1072,5 @@ void do_init_battleground(void)
++	bg_queue_db = idb_alloc(DB_OPT_RELEASE_DATA);
+ 	add_timer_func_list(bg_send_xy_timer, "bg_send_xy_timer");
++	add_timer_func_list(bg_block_skill_end,"bg_block_skill_end");
+ 	add_timer_interval(gettick() + battle_config.bg_update_interval, bg_send_xy_timer, 0, 0, battle_config.bg_update_interval);
++	bg_guild_build_data();
+ }
+ 
  void do_final_battleground(void)
  {
  	bg_team_db->destroy(bg_team_db, NULL);
