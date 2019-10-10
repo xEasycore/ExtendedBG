@@ -1,9 +1,9 @@
  conf/battle/battleground.conf |  39 ++
  conf/maps_athena.conf         |  22 ++
  src/common/mmo.hpp            |   1 +
- src/map/atcommand.cpp         | 141 +++++++
- src/map/battle.cpp            |  12 +
- src/map/battle.hpp            |  12 +
+ src/map/atcommand.cpp         | 216 ++++++++++
+ src/map/battle.cpp            |  11 +
+ src/map/battle.hpp            |  11 +
  src/map/battleground.cpp      | 884 +++++++++++++++++++++++++++++++++++++++--
  src/map/battleground.hpp      |  66 +++-
  src/map/buyingstore.cpp       |   8 +
@@ -16,12 +16,12 @@
  src/map/pc.hpp                |  16 +
  src/map/script.cpp            | 901 ++++++++++++++++++++++++++++++++++++++++--
  src/map/script_constants.hpp  |   5 +
- src/map/skill.cpp             |  76 +++-
+ src/map/skill.cpp             |  80 +++-
  src/map/storage.cpp           |   8 +
  src/map/trade.cpp             |   8 +
  src/map/unit.cpp              |   1 +
  src/map/vending.cpp           |   4 +
- 23 files changed, 2474 insertions(+), 113 deletions(-)
+ 23 files changed, 2549 insertions(+), 115 deletions(-)
 
 diff --git a/conf/battle/battleground.conf b/conf/battle/battleground.conf
 index 98b2dd8..098828d 100644
@@ -102,10 +102,10 @@ index e7972fa..752d929 100644
 +map: region_8
 \ No newline at end of file
 diff --git a/src/common/mmo.hpp b/src/common/mmo.hpp
-index 2c36488..9e47290 100644
+index 5240a4e..b57cfe3 100644
 --- a/src/common/mmo.hpp
 +++ b/src/common/mmo.hpp
-@@ -671,6 +671,7 @@ struct guild {
+@@ -670,6 +670,7 @@ struct guild {
  	struct guild_alliance alliance[MAX_GUILDALLIANCE];
  	struct guild_expulsion expulsion[MAX_GUILDEXPULSION];
  	struct guild_skill skill[MAX_GUILDSKILL];
@@ -114,7 +114,7 @@ index 2c36488..9e47290 100644
  	unsigned short instance_id;
  	time_t last_leader_change;
 diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
-index 455c2d8..f25e758 100644
+index 8d4e5a9..535aca7 100644
 --- a/src/map/atcommand.cpp
 +++ b/src/map/atcommand.cpp
 @@ -22,6 +22,7 @@
@@ -125,7 +125,7 @@ index 455c2d8..f25e758 100644
  #include "channel.hpp"
  #include "chat.hpp"
  #include "chrif.hpp"
-@@ -9999,6 +10000,141 @@ ACMD_FUNC(limitedsale){
+@@ -10050,6 +10051,215 @@ ACMD_FUNC(limitedsale){
  	return 0;
  }
  
@@ -264,10 +264,84 @@ index 455c2d8..f25e758 100644
 +	return 0;
 +}
 +
++/*==========================================
++* Guild Skill Usage for Guild Masters
++*------------------------------------------*/
++ACMD_FUNC(bgskill)
++{
++	int i, skillnum = 0, skilllv = 0;
++	unsigned int tick = gettick();
++	struct battleground_data *bgd;
++
++	const struct { char skillstr[3]; int id; } skills[] = {
++		{ "BO",	10010 },
++		{ "RG",	10011 },
++		{ "RS",	10012 },
++		{ "EC",	10013 },
++	};
++
++	// Check for Skill ID
++	for( i = 0; i < ARRAYLENGTH(skills); i++ )
++	{
++		if( strncmpi(message, skills[i].skillstr, 3) == 0 )
++		{
++			skillnum = skills[i].id;
++			break;
++		}
++	}
++	if( !skillnum )
++	{
++		clif_displaymessage(fd, "Invalid Skill string. Use @bgskill EC/RS/RG/BO");
++		return -1;
++	}
++
++	if( !map_getmapflag(sd->bl.m, MF_BATTLEGROUND) )
++	{
++		clif_displaymessage(fd, "This command is only available for Battleground.");
++		return -1;
++	}
++	else
++	{
++		if( (bgd = sd->bmaster_flag) != NULL )
++		{
++			if( bgd->skill_block_timer[skillnum] == INVALID_TIMER )
++				skilllv = bg_checkskill(bgd, skillnum);
++			else
++			{
++				bg_block_skill_status(bgd, skillnum);
++				skilllv = 0;
++			}
++		}
++		else
++		{
++			clif_displaymessage(fd, "This command is reserved for Team Leaders Only.");
++			return -1;
++		}
++	}
++
++	if( pc_cant_act(sd) || pc_issit(sd) || skill_isNotOk(skillnum, sd) || sd->ud.skilltimer != -1 || sd->sc.option&(OPTION_WEDDING|OPTION_XMAS|OPTION_SUMMER) || sd->state.only_walk || sd->sc.data[SC_BASILICA] )
++		return -1;
++
++	if( DIFF_TICK(tick, sd->ud.canact_tick) < 0 )
++		return -1;
++
++	if( sd->menuskill_id )
++	{
++		if( sd->menuskill_id == SA_TAMINGMONSTER )
++			sd->menuskill_id = sd->menuskill_val = 0; //Cancel pet capture.
++		else if( sd->menuskill_id != SA_AUTOSPELL )
++			return -1; //Can't use skills while a menu is open.
++	}
++
++	sd->skillitem = sd->skillitemlv = 0;
++	if( skilllv ) unit_skilluse_id(&sd->bl, sd->bl.id, skillnum, skilllv);
++	return 0;
++}
++
  #include "../custom/atcommand.inc"
  
  /**
-@@ -10298,6 +10434,11 @@ void atcommand_basecommands(void) {
+@@ -10349,6 +10559,12 @@ void atcommand_basecommands(void) {
  		ACMD_DEF(agitend3),
  		ACMD_DEFR(limitedsale, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
  		ACMD_DEFR(changedress, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
@@ -276,18 +350,18 @@ index 455c2d8..f25e758 100644
 +		ACMD_DEF(order),
 +		ACMD_DEF(leader),
 +		ACMD_DEF(reportafk),
++		ACMD_DEF(bgskill),
  	};
  	AtCommandInfo* atcommand;
  	int i;
 diff --git a/src/map/battle.cpp b/src/map/battle.cpp
-index b03f2c2..68a6d83 100644
+index e82f025..cfc65e1 100644
 --- a/src/map/battle.cpp
 +++ b/src/map/battle.cpp
-@@ -8515,6 +8515,18 @@ static const struct _battle_data {
- 	{ "summoner_trait",                     &battle_config.summoner_trait,                  3,      0,      3,              },
+@@ -8506,6 +8506,17 @@ static const struct _battle_data {
  	{ "homunculus_autofeed_always",         &battle_config.homunculus_autofeed_always,      1,      0,      1,              },
  	{ "feature.attendance",                 &battle_config.feature_attendance,              1,      0,      1,              },
-+	// BG eAmod Battle Configs [Easycore]
+ 	{ "feature.privateairship",             &battle_config.feature_privateairship,          1,      0,      1,              },
 +	{ "bg_eAmod_mode",                      &battle_config.bg_eAmod_mode,                   1,      0,      1,              },
 +	{ "bg_idle_announce",                   &battle_config.bg_idle_announce,                0,      0,      INT_MAX,        },
 +	{ "bg_idle_autokick",                   &battle_config.bg_idle_autokick,                0,      0,      INT_MAX,        },
@@ -303,14 +377,13 @@ index b03f2c2..68a6d83 100644
  #include "../custom/battle_config_init.inc"
  };
 diff --git a/src/map/battle.hpp b/src/map/battle.hpp
-index dd2d647..d8246d8 100644
+index 0dfefdb..c1c49ba 100644
 --- a/src/map/battle.hpp
 +++ b/src/map/battle.hpp
-@@ -645,6 +645,18 @@ struct Battle_Config
- 	int summoner_trait;
+@@ -646,6 +646,17 @@ struct Battle_Config
  	int homunculus_autofeed_always;
  	int feature_attendance;
-+	// BG eAmod [Easycore]
+ 	int feature_privateairship;
 +	int bg_idle_announce;
 +	int bg_idle_autokick;
 +	int bg_reportafk_leaderonly;
@@ -1471,7 +1544,7 @@ index 65bee90..c31a637 100644
  
  #endif /* _BATTLEGROUND_HPP_ */
 diff --git a/src/map/buyingstore.cpp b/src/map/buyingstore.cpp
-index 173997a..007dde0 100644
+index 8a92ade..620d447 100644
 --- a/src/map/buyingstore.cpp
 +++ b/src/map/buyingstore.cpp
 @@ -12,6 +12,7 @@
@@ -1497,7 +1570,7 @@ index 173997a..007dde0 100644
  		ARR_FIND( 0, pl_sd->buyingstore.slots, listidx, pl_sd->buyingstore.items[listidx].nameid == nameid );
  		if( listidx == pl_sd->buyingstore.slots || pl_sd->buyingstore.items[listidx].amount == 0 )
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index 1b1d639..6e5bc0b 100644
+index ad6b315..aef3e63 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
 @@ -372,6 +372,30 @@ static int clif_send_sub(struct block_list *bl, va_list ap)
@@ -1606,7 +1679,7 @@ index 1b1d639..6e5bc0b 100644
  				clif_sendbgemblem_single(sd->fd,tsd);
  			if ( tsd->status.robe )
  				clif_refreshlook(&sd->bl,bl->id,LOOK_ROBE,tsd->status.robe,SELF);
-@@ -8217,6 +8251,11 @@ void clif_guild_belonginfo(struct map_session_data *sd)
+@@ -8233,6 +8267,11 @@ void clif_guild_belonginfo(struct map_session_data *sd)
  
  	nullpo_retv(sd);
  	nullpo_retv(g = sd->guild);
@@ -1618,7 +1691,7 @@ index 1b1d639..6e5bc0b 100644
  
  	fd=sd->fd;
  	ps=guild_getposition(sd);
-@@ -8336,6 +8375,7 @@ void clif_guild_masterormember(struct map_session_data *sd)
+@@ -8352,6 +8391,7 @@ void clif_guild_masterormember(struct map_session_data *sd)
  void clif_guild_basicinfo(struct map_session_data *sd) {
  	int fd;
  	struct guild *g;
@@ -1626,7 +1699,7 @@ index 1b1d639..6e5bc0b 100644
  #if PACKETVER < 20160622
  	int cmd = 0x1b6;
  	int offset = NAME_LENGTH;
-@@ -8347,14 +8387,20 @@ void clif_guild_basicinfo(struct map_session_data *sd) {
+@@ -8363,14 +8403,20 @@ void clif_guild_basicinfo(struct map_session_data *sd) {
  	nullpo_retv(sd);
  	fd = sd->fd;
  
@@ -1649,7 +1722,7 @@ index 1b1d639..6e5bc0b 100644
  	WFIFOL(fd,14)=g->max_member;
  	WFIFOL(fd,18)=g->average_lv;
  	WFIFOL(fd,22)=(uint32)cap_value(g->exp,0,INT32_MAX);
-@@ -8385,7 +8431,9 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
+@@ -8401,7 +8447,9 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
  	struct guild *g;
  
  	nullpo_retv(sd);
@@ -1660,7 +1733,7 @@ index 1b1d639..6e5bc0b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8404,6 +8452,45 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
+@@ -8420,6 +8468,45 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
  	WFIFOSET(fd,WFIFOW(fd,2));
  }
  
@@ -1706,7 +1779,7 @@ index 1b1d639..6e5bc0b 100644
  
  /// Guild member manager information
  /// 0154 <packet len>.W { <account>.L <char id>.L <hair style>.W <hair color>.W <gender>.W <class>.W <level>.W <contrib exp>.L <state>.L <position>.L <memo>.50B <name>.24B }* (ZC_MEMBERMGR_INFO)
-@@ -8430,7 +8517,15 @@ void clif_guild_memberlist(struct map_session_data *sd)
+@@ -8446,7 +8533,15 @@ void clif_guild_memberlist(struct map_session_data *sd)
  
  	if( (fd = sd->fd) == 0 )
  		return;
@@ -1723,7 +1796,7 @@ index 1b1d639..6e5bc0b 100644
  		return;
  
  	WFIFOHEAD(fd, g->max_member * size + 4);
-@@ -8470,7 +8565,10 @@ void clif_guild_positionnamelist(struct map_session_data *sd)
+@@ -8486,7 +8581,10 @@ void clif_guild_positionnamelist(struct map_session_data *sd)
  	struct guild *g;
  
  	nullpo_retv(sd);
@@ -1735,7 +1808,7 @@ index 1b1d639..6e5bc0b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8498,7 +8596,10 @@ void clif_guild_positioninfolist(struct map_session_data *sd)
+@@ -8514,7 +8612,10 @@ void clif_guild_positioninfolist(struct map_session_data *sd)
  	struct guild *g;
  
  	nullpo_retv(sd);
@@ -1747,7 +1820,7 @@ index 1b1d639..6e5bc0b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8605,8 +8706,8 @@ void clif_guild_emblem_area(struct block_list* bl)
+@@ -8621,8 +8722,8 @@ void clif_guild_emblem_area(struct block_list* bl)
  	//      (emblem in the flag npcs and emblem over the head in agit maps) [FlavioJS]
  	WBUFW(buf,0) = 0x1b4;
  	WBUFL(buf,2) = bl->id;
@@ -1758,7 +1831,7 @@ index 1b1d639..6e5bc0b 100644
  	clif_send(buf, 12, bl, AREA_WOS);
  }
  
-@@ -8620,7 +8721,10 @@ void clif_guild_skillinfo(struct map_session_data* sd)
+@@ -8636,7 +8737,10 @@ void clif_guild_skillinfo(struct map_session_data* sd)
  	int i,c;
  
  	nullpo_retv(sd);
@@ -1770,7 +1843,7 @@ index 1b1d639..6e5bc0b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8767,7 +8871,10 @@ void clif_guild_expulsionlist(struct map_session_data* sd)
+@@ -8783,7 +8887,10 @@ void clif_guild_expulsionlist(struct map_session_data* sd)
  
  	nullpo_retv(sd);
  
@@ -1782,7 +1855,7 @@ index 1b1d639..6e5bc0b 100644
  		return;
  
  	fd = sd->fd;
-@@ -9472,6 +9579,7 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+@@ -9488,6 +9595,7 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
  		{
  			struct map_session_data *sd = (struct map_session_data *)bl;
  			struct party_data *p = NULL;
@@ -1790,7 +1863,7 @@ index 1b1d639..6e5bc0b 100644
  
  #if PACKETVER >= 20150513
  			WBUFW(buf, 0) = cmd = 0xa30;
-@@ -9504,8 +9612,15 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+@@ -9520,8 +9628,15 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
  			}else{
  				WBUFB(buf,30) = 0;
  			}
@@ -1808,7 +1881,7 @@ index 1b1d639..6e5bc0b 100644
  				int position;
  
  				// Will get the position of the guild the player is in
-@@ -10077,6 +10192,8 @@ static bool clif_process_message(struct map_session_data* sd, bool whisperFormat
+@@ -10093,6 +10208,8 @@ static bool clif_process_message(struct map_session_data* sd, bool whisperFormat
  
  	if (battle_config.idletime_option&IDLE_CHAT)
  		sd->idletime = last_tick;
@@ -1817,7 +1890,7 @@ index 1b1d639..6e5bc0b 100644
  
  	return true;
  }
-@@ -10818,6 +10935,8 @@ void clif_parse_WalkToXY(int fd, struct map_session_data *sd)
+@@ -10837,6 +10954,8 @@ void clif_parse_WalkToXY(int fd, struct map_session_data *sd)
  	//Set last idle time... [Skotlex]
  	if (battle_config.idletime_option&IDLE_WALK)
  		sd->idletime = last_tick;
@@ -1826,7 +1899,7 @@ index 1b1d639..6e5bc0b 100644
  
  	unit_walktoxy(&sd->bl, x, y, 4);
  }
-@@ -11032,6 +11151,8 @@ void clif_parse_Emotion(int fd, struct map_session_data *sd)
+@@ -11051,6 +11170,8 @@ void clif_parse_Emotion(int fd, struct map_session_data *sd)
  
  		if (battle_config.idletime_option&IDLE_EMOTION)
  			sd->idletime = last_tick;
@@ -1835,7 +1908,7 @@ index 1b1d639..6e5bc0b 100644
  
  		if(battle_config.client_reshuffle_dice && emoticon>=ET_DICE1 && emoticon<=ET_DICE6) {// re-roll dice
  			emoticon = rnd()%6+ET_DICE1;
-@@ -11110,6 +11231,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
+@@ -11129,6 +11250,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
  		pc_delinvincibletimer(sd);
  		if (battle_config.idletime_option&IDLE_ATTACK)
  			sd->idletime = last_tick;
@@ -1844,7 +1917,7 @@ index 1b1d639..6e5bc0b 100644
  		unit_attack(&sd->bl, target_id, action_type != 0);
  		break;
  	case 0x02: // sitdown
-@@ -11135,6 +11258,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
+@@ -11154,6 +11277,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
  
  		if (battle_config.idletime_option&IDLE_SIT)
  			sd->idletime = last_tick;
@@ -1853,7 +1926,7 @@ index 1b1d639..6e5bc0b 100644
  
  		pc_setsit(sd);
  		skill_sit(sd, 1);
-@@ -11153,6 +11278,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
+@@ -11172,6 +11297,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
  		if (pc_setstand(sd, false)) {
  			if (battle_config.idletime_option&IDLE_SIT)
  				sd->idletime = last_tick;
@@ -1862,7 +1935,7 @@ index 1b1d639..6e5bc0b 100644
  			skill_sit(sd, 0);
  			clif_standing(&sd->bl);
  		}
-@@ -11410,6 +11537,8 @@ void clif_parse_DropItem(int fd, struct map_session_data *sd){
+@@ -11429,6 +11556,8 @@ void clif_parse_DropItem(int fd, struct map_session_data *sd){
  
  		if (battle_config.idletime_option&IDLE_DROPITEM)
  			sd->idletime = last_tick;
@@ -1871,7 +1944,7 @@ index 1b1d639..6e5bc0b 100644
  
  		return;
  	}
-@@ -11438,6 +11567,8 @@ void clif_parse_UseItem(int fd, struct map_session_data *sd)
+@@ -11457,6 +11586,8 @@ void clif_parse_UseItem(int fd, struct map_session_data *sd)
  	//Whether the item is used or not is irrelevant, the char ain't idle. [Skotlex]
  	if (battle_config.idletime_option&IDLE_USEITEM)
  		sd->idletime = last_tick;
@@ -1880,7 +1953,7 @@ index 1b1d639..6e5bc0b 100644
  	n = RFIFOW(fd,packet_db[RFIFOW(fd,0)].pos[0])-2;
  
  	if(n <0 || n >= MAX_INVENTORY)
-@@ -11485,7 +11616,8 @@ void clif_parse_EquipItem(int fd,struct map_session_data *sd)
+@@ -11504,7 +11635,8 @@ void clif_parse_EquipItem(int fd,struct map_session_data *sd)
  
  	if (battle_config.idletime_option&IDLE_USEITEM)
  		sd->idletime = last_tick;
@@ -1890,7 +1963,7 @@ index 1b1d639..6e5bc0b 100644
  	//Client doesn't send the position for ammo.
  	if(sd->inventory_data[index]->type == IT_AMMO)
  		pc_equipitem(sd,index,EQP_AMMO);
-@@ -11524,6 +11656,8 @@ void clif_parse_UnequipItem(int fd,struct map_session_data *sd)
+@@ -11543,6 +11675,8 @@ void clif_parse_UnequipItem(int fd,struct map_session_data *sd)
  
  	if (battle_config.idletime_option&IDLE_USEITEM)
  		sd->idletime = last_tick;
@@ -1899,16 +1972,16 @@ index 1b1d639..6e5bc0b 100644
  
  	pc_unequipitem(sd,index,1);
  }
-@@ -12172,6 +12306,8 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
+@@ -12191,6 +12325,8 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
  	// Whether skill fails or not is irrelevant, the char ain't idle. [Skotlex]
  	if (battle_config.idletime_option&IDLE_USESKILLTOID)
  		sd->idletime = last_tick;
 +	if (sd && sd->bg_id)
 +			pc_update_last_action(sd);
  
- 	if (sd->npc_id) {
- #ifdef RENEWAL
-@@ -12236,7 +12372,25 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
+ 	if( sd->npc_id ){
+ 		if( pc_hasprogress( sd, WIP_DISABLE_SKILLITEM ) || !sd->npc_item_flag || !( inf & INF_SELF_SKILL ) ){
+@@ -12252,7 +12388,25 @@ void clif_parse_UseSkillToId(int fd, struct map_session_data *sd)
  	sd->skillitem = sd->skillitemlv = 0;
  
  	if( SKILL_CHK_GUILD(skill_id) ) {
@@ -1935,7 +2008,7 @@ index 1b1d639..6e5bc0b 100644
  			skill_lv = guild_checkskill(sd->guild, skill_id);
  		else
  			skill_lv = 0;
-@@ -12280,6 +12434,8 @@ static void clif_parse_UseSkillToPosSub(int fd, struct map_session_data *sd, uin
+@@ -12296,6 +12450,8 @@ static void clif_parse_UseSkillToPosSub(int fd, struct map_session_data *sd, uin
  	//Whether skill fails or not is irrelevant, the char ain't idle. [Skotlex]
  	if (battle_config.idletime_option&IDLE_USESKILLTOPOS)
  		sd->idletime = last_tick;
@@ -1944,7 +2017,7 @@ index 1b1d639..6e5bc0b 100644
  
  	if( skill_isNotOk(skill_id, sd) )
  		return;
-@@ -13487,10 +13643,14 @@ void clif_parse_GuildChangeMemberPosition(int fd, struct map_session_data *sd)
+@@ -13503,10 +13659,14 @@ void clif_parse_GuildChangeMemberPosition(int fd, struct map_session_data *sd)
  void clif_parse_GuildRequestEmblem(int fd,struct map_session_data *sd)
  {
  	struct guild* g;
@@ -1960,7 +2033,7 @@ index 1b1d639..6e5bc0b 100644
  }
  
  
-@@ -17267,6 +17427,110 @@ void clif_bg_message(struct battleground_data *bg, int src_id, const char *name,
+@@ -17283,6 +17443,110 @@ void clif_bg_message(struct battleground_data *bg, int src_id, const char *name,
  		aFree(buf);
  }
  
@@ -2071,31 +2144,32 @@ index 1b1d639..6e5bc0b 100644
  
  /// Validates and processes battlechat messages [pakpil] (CZ_BATTLEFIELD_CHAT).
  /// 0x2db <packet len>.W <text>.?B (<name> : <message>) 00
-@@ -17299,14 +17563,20 @@ void clif_bg_updatescore(int16 m)
+@@ -17316,6 +17580,7 @@ void clif_bg_updatescore(int16 m)
  
  void clif_bg_updatescore_single(struct map_session_data *sd)
  {
-+	struct battleground_data *bgd;
++	struct battleground_data *bg;
  	int fd;
  	nullpo_retv(sd);
  	fd = sd->fd;
+@@ -17324,8 +17589,13 @@ void clif_bg_updatescore_single(struct map_session_data *sd)
  
  	WFIFOHEAD(fd,packet_len(0x2de));
  	WFIFOW(fd,0) = 0x2de;
--	WFIFOW(fd,2) = map[sd->bl.m].bgscore_lion;
--	WFIFOW(fd,4) = map[sd->bl.m].bgscore_eagle;
+-	WFIFOW(fd,2) = mapdata->bgscore_lion;
+-	WFIFOW(fd,4) = mapdata->bgscore_eagle;
 +	if (map_getmapflag(sd->bl.m, MF_BATTLEGROUND) == 2) {
 +		WFIFOW(fd,2) = map[sd->bl.m].bgscore_lion;
 +		WFIFOW(fd,4) = map[sd->bl.m].bgscore_eagle;
-+	} else {
-+		WFIFOW(fd,2) = bgd->team_score;;
++	} else if( map_getmapflag(sd->bl.m, MF_BATTLEGROUND) == 3 && (bg = bg_team_search(sd->bg_id)) != NULL ) {
++		WFIFOW(fd,2) = bg->team_score;
 +		WFIFOW(fd,4) = map[sd->bl.m].bgscore_top;
 +	}
  	WFIFOSET(fd,packet_len(0x2de));
  }
  
 diff --git a/src/map/clif.hpp b/src/map/clif.hpp
-index 5290bcd..d60e672 100644
+index ba11700..2b79185 100644
 --- a/src/map/clif.hpp
 +++ b/src/map/clif.hpp
 @@ -212,6 +212,7 @@ enum send_target : uint8_t {
@@ -2106,7 +2180,7 @@ index 5290bcd..d60e672 100644
  
  	CLAN,				// Clan System
  };
-@@ -797,6 +798,15 @@ void clif_bg_updatescore(int16 m);
+@@ -798,6 +799,15 @@ void clif_bg_updatescore(int16 m);
  void clif_bg_updatescore_single(struct map_session_data *sd);
  void clif_sendbgemblem_area(struct map_session_data *sd);
  void clif_sendbgemblem_single(int fd, struct map_session_data *sd);
@@ -2122,7 +2196,7 @@ index 5290bcd..d60e672 100644
  
  // Instancing
  void clif_instance_create(unsigned short instance_id, int num);
-@@ -1034,6 +1044,7 @@ void clif_sale_end(struct sale_item_data* sale_item, struct block_list* bl, enum
+@@ -1035,6 +1045,7 @@ void clif_sale_end(struct sale_item_data* sale_item, struct block_list* bl, enum
  void clif_sale_amount(struct sale_item_data* sale_item, struct block_list* bl, enum send_target target);
  void clif_sale_open(struct map_session_data* sd);
  
@@ -2131,10 +2205,10 @@ index 5290bcd..d60e672 100644
   * Color Table
   **/
 diff --git a/src/map/map.cpp b/src/map/map.cpp
-index 7d5f0fe..279a9f9 100644
+index 8c554b1..c9760dc 100644
 --- a/src/map/map.cpp
 +++ b/src/map/map.cpp
-@@ -1860,6 +1860,18 @@ void map_reqnickdb(struct map_session_data * sd, int charid)
+@@ -1903,6 +1903,18 @@ void map_reqnickdb(struct map_session_data * sd, int charid)
  	struct map_session_data* tsd;
  
  	nullpo_retv(sd);
@@ -2154,13 +2228,13 @@ index 7d5f0fe..279a9f9 100644
  	tsd = map_charid2sd(charid);
  	if( tsd )
 diff --git a/src/map/map.hpp b/src/map/map.hpp
-index 8fee021..49855cc 100644
+index 3248b82..94ec034 100644
 --- a/src/map/map.hpp
 +++ b/src/map/map.hpp
-@@ -586,6 +586,10 @@ enum e_mapflag : int16 {
- 	MF_HIDEMOBHPBAR,
- 	MF_NOLOOT,
+@@ -589,6 +589,10 @@ enum e_mapflag : int16 {
  	MF_NOEXP,
+ 	MF_PRIVATEAIRSHIP_SOURCE,
+ 	MF_PRIVATEAIRSHIP_DESTINATION,
 +	MF_NOECALL, // [BattleGround System] [Easycore]
 +	MF_BG_CONSUME, // allows using BG consumables [Easycore]
 +	MF_WOE_CONSUME, // allows using WoE consumables [Easycore]
@@ -2191,7 +2265,7 @@ index 08f37db..c37fc07 100644
  			unsigned int timertick;
  			struct npc_timerevent_list *timer_event;
 diff --git a/src/map/pc.cpp b/src/map/pc.cpp
-index 2f4a99c..1b143d8 100755
+index 9e40629..ece43c7 100755
 --- a/src/map/pc.cpp
 +++ b/src/map/pc.cpp
 @@ -1427,6 +1427,27 @@ bool pc_set_hate_mob(struct map_session_data *sd, int pos, struct block_list *bl
@@ -2222,7 +2296,7 @@ index 2f4a99c..1b143d8 100755
  /*==========================================
   * Invoked once after the char/account/account2 registry variables are received. [Skotlex]
   * We didn't receive item information at this point so DO NOT attempt to do item operations here.
-@@ -5101,6 +5122,13 @@ int pc_useitem(struct map_session_data *sd,int n)
+@@ -5099,6 +5120,13 @@ int pc_useitem(struct map_session_data *sd,int n)
  		}
  		return 0;/* regardless, effect is not run */
  	}
@@ -2236,7 +2310,7 @@ index 2f4a99c..1b143d8 100755
  
  	sd->itemid = item.nameid;
  	sd->itemindex = n;
-@@ -9123,6 +9151,12 @@ bool pc_candrop(struct map_session_data *sd, struct item *item)
+@@ -9124,6 +9152,12 @@ bool pc_candrop(struct map_session_data *sd, struct item *item)
  		return false;
  	if( !pc_can_give_items(sd) || sd->sc.cant.drop) //check if this GM level can drop items
  		return false;
@@ -2291,10 +2365,10 @@ index e2609b5..1ec4d87 100644
  int pc_level_penalty_mod(int level_diff, uint32 mob_class, enum e_mode mode, int type);
  #endif
 diff --git a/src/map/script.cpp b/src/map/script.cpp
-index aa05b45..75a4902 100644
+index dd4339c..6a8dba4 100644
 --- a/src/map/script.cpp
 +++ b/src/map/script.cpp
-@@ -5468,6 +5468,156 @@ static int buildin_areawarp_sub(struct block_list *bl,va_list ap)
+@@ -5469,6 +5469,156 @@ static int buildin_areawarp_sub(struct block_list *bl,va_list ap)
  	return 0;
  }
  
@@ -2451,7 +2525,7 @@ index aa05b45..75a4902 100644
  BUILDIN_FUNC(areawarp)
  {
  	int16 m, x0,y0,x1,y1, x2,y2,x3=0,y3=0;
-@@ -19188,13 +19338,10 @@ BUILDIN_FUNC(waitingroom2bg)
+@@ -19209,13 +19359,10 @@ BUILDIN_FUNC(waitingroom2bg)
  	struct npc_data *nd;
  	struct chat_data *cd;
  	const char *map_name, *ev = "", *dev = "";
@@ -2468,7 +2542,7 @@ index aa05b45..75a4902 100644
  
  	if( nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL )
  	{
-@@ -19211,17 +19358,19 @@ BUILDIN_FUNC(waitingroom2bg)
+@@ -19232,17 +19379,19 @@ BUILDIN_FUNC(waitingroom2bg)
  
  	x = script_getnum(st,3);
  	y = script_getnum(st,4);
@@ -2493,7 +2567,7 @@ index aa05b45..75a4902 100644
  		return SCRIPT_CMD_SUCCESS;
  	}
  
-@@ -19291,7 +19440,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
+@@ -19312,7 +19461,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
  /// @author [secretdataz]
  BUILDIN_FUNC(bg_create) {
  	const char *map_name, *ev = "", *dev = "";
@@ -2502,7 +2576,7 @@ index aa05b45..75a4902 100644
  
  	map_name = script_getstr(st, 2);
  	if (strcmp(map_name, "-") != 0 && (mapindex = mapindex_name2id(map_name)) == 0)
-@@ -19302,18 +19451,672 @@ BUILDIN_FUNC(bg_create) {
+@@ -19323,18 +19472,672 @@ BUILDIN_FUNC(bg_create) {
  
  	x = script_getnum(st, 3);
  	y = script_getnum(st, 4);
@@ -3179,7 +3253,7 @@ index aa05b45..75a4902 100644
  /// Adds attached player or <char id> (if specified) to an existing 
  /// battleground group and warps it to the specified coordinates on
  /// the given map.
-@@ -19380,7 +20183,9 @@ BUILDIN_FUNC(bg_warp)
+@@ -19401,7 +20204,9 @@ BUILDIN_FUNC(bg_warp)
  
  	bg_id = script_getnum(st,2);
  	map_name = script_getstr(st,3);
@@ -3190,7 +3264,7 @@ index aa05b45..75a4902 100644
  		return SCRIPT_CMD_SUCCESS; // Invalid Map
  	x = script_getnum(st,4);
  	y = script_getnum(st,5);
-@@ -19438,7 +20243,7 @@ BUILDIN_FUNC(bg_leave)
+@@ -19459,7 +20264,7 @@ BUILDIN_FUNC(bg_leave)
  BUILDIN_FUNC(bg_destroy)
  {
  	int bg_id = script_getnum(st,2);
@@ -3199,7 +3273,7 @@ index aa05b45..75a4902 100644
  	return SCRIPT_CMD_SUCCESS;
  }
  
-@@ -19496,11 +20301,11 @@ BUILDIN_FUNC(bg_updatescore)
+@@ -19519,11 +20324,11 @@ BUILDIN_FUNC(bg_updatescore)
  
  BUILDIN_FUNC(bg_get_data)
  {
@@ -3213,7 +3287,7 @@ index aa05b45..75a4902 100644
  	{
  		script_pushint(st,0);
  		return SCRIPT_CMD_SUCCESS;
-@@ -19508,13 +20313,22 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19531,13 +20336,22 @@ BUILDIN_FUNC(bg_get_data)
  
  	switch( type )
  	{
@@ -3239,7 +3313,7 @@ index aa05b45..75a4902 100644
  		default:
  			ShowError("script:bg_get_data: unknown data identifier %d\n", type);
  			break;
-@@ -19523,6 +20337,21 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19546,6 +20360,21 @@ BUILDIN_FUNC(bg_get_data)
  	return SCRIPT_CMD_SUCCESS;
  }
  
@@ -3261,7 +3335,7 @@ index aa05b45..75a4902 100644
  /*==========================================
   * Instancing System
   *------------------------------------------*/
-@@ -24281,7 +25110,31 @@ struct script_function buildin_func[] = {
+@@ -24304,7 +25133,31 @@ struct script_function buildin_func[] = {
  	BUILDIN_DEF(bg_getareausers,"isiiii"),
  	BUILDIN_DEF(bg_updatescore,"sii"),
  	BUILDIN_DEF(bg_join,"i????"),
@@ -3295,13 +3369,13 @@ index aa05b45..75a4902 100644
  	// Instancing
  	BUILDIN_DEF(instance_create,"s??"),
 diff --git a/src/map/script_constants.hpp b/src/map/script_constants.hpp
-index 939aea5..54b1ac5 100644
+index f81a824..38ec420 100644
 --- a/src/map/script_constants.hpp
 +++ b/src/map/script_constants.hpp
-@@ -453,6 +453,11 @@
- 	export_constant(MF_HIDEMOBHPBAR);
- 	export_constant(MF_NOLOOT);
+@@ -455,6 +455,11 @@
  	export_constant(MF_NOEXP);
+ 	export_constant(MF_PRIVATEAIRSHIP_SOURCE);
+ 	export_constant(MF_PRIVATEAIRSHIP_DESTINATION);
 +	// Battleground eAmod [Easycore]
 +	script_set_constant("mf_noemergencycall",MF_NOECALL,false,false);
 +	export_constant(MF_BG_CONSUME);
@@ -3311,7 +3385,7 @@ index 939aea5..54b1ac5 100644
  	/* setcell types */
  	export_constant(CELL_WALKABLE);
 diff --git a/src/map/skill.cpp b/src/map/skill.cpp
-index 8c0595d..bbfccff 100755
+index 82adbed..9b48636 100755
 --- a/src/map/skill.cpp
 +++ b/src/map/skill.cpp
 @@ -682,6 +682,9 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
@@ -3324,7 +3398,7 @@ index 8c0595d..bbfccff 100755
  		clif_skill_fail(sd,skill_id,USESKILL_FAIL_SKILLINTERVAL,0);
  		return true;
  	}
-@@ -773,6 +776,10 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
+@@ -773,10 +776,14 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
  			break;
  		case GD_EMERGENCYCALL:
  		case GD_ITEMEMERGENCYCALL:
@@ -3333,8 +3407,14 @@ index 8c0595d..bbfccff 100755
 +				return true;
 +			}
  			if (
- 				!(battle_config.emergency_call&((is_agit_start())?2:1)) ||
+-				!(battle_config.emergency_call&((is_agit_start())?2:1)) ||
++				!map_getmapflag(m, MF_BATTLEGROUND) && (!(battle_config.emergency_call&((is_agit_start())?2:1)) ||
  				!(battle_config.emergency_call&(map_flag_gvg2(m)?8:4)) ||
+-				(battle_config.emergency_call&16 && map_getmapflag(m, MF_NOWARPTO) && !(map_getmapflag(m, MF_GVG_CASTLE) || map_getmapflag(m, MF_GVG_TE_CASTLE)))
++				(battle_config.emergency_call&16 && map_getmapflag(m, MF_NOWARPTO) && !(map_getmapflag(m, MF_GVG_CASTLE) || map_getmapflag(m, MF_GVG_TE_CASTLE))))
+ 			)	{
+ 				clif_skill_fail(sd,skill_id,USESKILL_FAIL_LEVEL,0);
+ 				return true;
 @@ -7758,6 +7765,8 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
  					sp -= sp * penalty / 100;
  				}
@@ -3444,7 +3524,7 @@ index 8c0595d..bbfccff 100755
  		}
  		break;
  
-@@ -15227,14 +15259,17 @@ bool skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_i
+@@ -15228,14 +15260,17 @@ bool skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_i
  		case GD_BATTLEORDER:
  		case GD_REGENERATION:
  		case GD_RESTORE:
@@ -3464,7 +3544,7 @@ index 8c0595d..bbfccff 100755
  				return false;
  			break;
  
-@@ -15931,7 +15966,12 @@ bool skill_check_condition_castend(struct map_session_data* sd, uint16 skill_id,
+@@ -15932,7 +15967,12 @@ bool skill_check_condition_castend(struct map_session_data* sd, uint16 skill_id,
  		if( !require.itemid[i] )
  			continue;
  		index[i] = pc_search_inventory(sd,require.itemid[i]);
@@ -3531,10 +3611,10 @@ index 05bc732..a18c804 100644
  	if( ((item->bound == BOUND_ACCOUNT || item->bound > BOUND_GUILD) || (item->bound == BOUND_GUILD && sd->status.guild_id != target_sd->status.guild_id)) && !pc_can_give_bounded_items(sd) ) { // Item Bound
  		clif_displaymessage(sd->fd, msg_txt(sd,293));
 diff --git a/src/map/unit.cpp b/src/map/unit.cpp
-index 80b09d5..e5c7328 100644
+index 1355a15..07913ee 100644
 --- a/src/map/unit.cpp
 +++ b/src/map/unit.cpp
-@@ -3190,6 +3190,7 @@ int unit_free(struct block_list *bl, clr_type clrtype)
+@@ -3188,6 +3188,7 @@ int unit_free(struct block_list *bl, clr_type clrtype)
  			pc_inventory_rental_clear(sd);
  			pc_delspiritball(sd, sd->spiritball, 1);
  			pc_delspiritcharm(sd, sd->spiritcharm, sd->spiritcharm_type);
@@ -3543,7 +3623,7 @@ index 80b09d5..e5c7328 100644
  			if( sd->st && sd->st->state != RUN ) {// free attached scripts that are waiting
  				script_free_state(sd->st);
 diff --git a/src/map/vending.cpp b/src/map/vending.cpp
-index 6c69640..1bb1172 100755
+index 73df92f..5670e7d 100755
 --- a/src/map/vending.cpp
 +++ b/src/map/vending.cpp
 @@ -10,6 +10,7 @@
