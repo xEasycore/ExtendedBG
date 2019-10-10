@@ -41,6 +41,7 @@ OnTeam2Die:
 OnTeam3Die:
 	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_TI" )
 	{
+		if (killerrid == 0) end;
 		// Killed Position
 		getmapxy .@m$, .@x, .@y, 0;
 		set .@Bid, getcharid(4);
