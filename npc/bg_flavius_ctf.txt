@@ -1,13 +1,16 @@
-// (c) 2008 - 2012 eAmod Project; Andres Garbanzo / Zephyrus
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  10-10-2019
+// By:
+//  Easycore         (Zephyrus, original author)
 //
-//  - gaiaro.staff@yahoo.com
-//  - MSN andresjgm.cr@hotmail.com
-//  - Skype: Zephyrus_cr
-//  - Site: http://dev.terra-gaming.com
-//
-// This file is NOT public - you are not allowed to distribute it.
-// Authorized Server List : http://dev.terra-gaming.com/index.php?/topic/72-authorized-eamod-servers/
-// eAmod is a non Free, extended version of eAthena Ragnarok Private Server.
+// Contact:
+//    - Facebook: https://www.facebook.com/EasycoreRo/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#3412
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 
 // ==============================================================================
 // BattleGround System - Flavius Capture the Flag
@@ -20,11 +23,11 @@ bat_b02,328,150,0	script	Alpha Crystal::Team1_Flag	1914,1,1,{
 	end;
 
 OnTouch:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF" || Hp < 1 )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF" || Hp < 1)
 		end;
 
-	if( getcharid(4) == $@BG_Team2 && .Flag_Status < 2 )
-	{ // Flag Captured
+	// Flag Captured
+	if (getcharid(4) == $@BG_Team2 && .Flag_Status < 2) {
 		set .Flag_Status, 2; // Taken
 		set .Flag_Carrier, getcharid(0);
 
@@ -43,11 +46,8 @@ OnTouch:
 		disablenpc "Team1_Flag";
 		addtimer 2100, "Flavius_CTF::OnAlphaFlash";
 		stopnpctimer;
-	}
-	else if( getcharid(4) == $@BG_Team1 )
-	{
-		if( .Flag_Status == 0 && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) )
-		{
+	} else if (getcharid(4) == $@BG_Team1) {
+		if (.Flag_Status == 0 && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0)) {
 			set getvariableofnpc(.Flag_Carrier,"Team2_Flag"),0;
 			set .Flag_Carrier, 0;
 			mapannounce "bat_b02","Omega Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,bg_get_data($@BG_Team2,4);
@@ -55,9 +55,7 @@ OnTouch:
 			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 			stopnpctimer;
 			donpcevent "Flavius_CTF::OnTeam1Score";
-		}
-		else if( .Flag_Status == 1 )
-		{
+		} else if (.Flag_Status == 1) {
 			mapannounce "bat_b02","Alpha Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,bg_get_data($@BG_Team1,4);
 			//bg_rankpoints "fame",1;
 			disablenpc "Team1_Flag";
@@ -72,8 +70,7 @@ OnTouch:
 
 OnTimer2000:
 	stopnpctimer;
-	if( .Flag_Status < 2 )
-	{
+	if (.Flag_Status < 2) {
 		getmapxy .@m$, .@x, .@y, BL_NPC;
 		viewpointmap "bat_b02",1, .@x, .@y, 1, bg_get_data($@BG_Team1,4);
 		specialeffect 223;
@@ -94,11 +91,11 @@ bat_b02,62,150,0	script	Omega Crystal::Team2_Flag	1915,1,1,{
 	end;
 
 OnTouch:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF" || Hp < 1 )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF" || Hp < 1)
 		end;
 
-	if( getcharid(4) == $@BG_Team1 && .Flag_Status < 2 )
-	{ // Flag Captured
+	// Flag Captured
+	if (getcharid(4) == $@BG_Team1 && .Flag_Status < 2) {
 		set .Flag_Status, 2; // Taken
 		set .Flag_Carrier, getcharid(0);
 
@@ -117,11 +114,8 @@ OnTouch:
 		disablenpc "Team2_Flag";
 		addtimer 2100, "Flavius_CTF::OnOmegaFlash";
 		stopnpctimer;
-	}
-	else if( getcharid(4) == $@BG_Team2 )
-	{
-		if( .Flag_Status == 0 && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) )
-		{
+	} else if (getcharid(4) == $@BG_Team2) {
+		if (.Flag_Status == 0 && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0)) {
 			set getvariableofnpc(.Flag_Carrier,"Team1_Flag"),0;
 			set .Flag_Carrier, 0;
 			mapannounce "bat_b02","Alpha Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,bg_get_data($@BG_Team1,4);
@@ -129,9 +123,7 @@ OnTouch:
 			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 			stopnpctimer;
 			donpcevent "Flavius_CTF::OnTeam2Score";
-		}
-		else if( .Flag_Status == 1 )
-		{
+		} else if (.Flag_Status == 1) {
 			mapannounce "bat_b02","Omega Crystal Returned by [ " + strcharinfo(0) + " ]!!",1,bg_get_data($@BG_Team2,4);
 			//bg_rankpoints "fame",1;
 			disablenpc "Team2_Flag";
@@ -146,8 +138,7 @@ OnTouch:
 
 OnTimer2000:
 	stopnpctimer;
-	if( .Flag_Status < 2 )
-	{
+	if (.Flag_Status < 2) {
 		getmapxy .@m$, .@x, .@y, BL_NPC;
 		viewpointmap "bat_b02",1, .@x, .@y, 2, bg_get_data($@BG_Team2,4);
 		specialeffect 223;
@@ -171,8 +162,7 @@ OnBase:
 	end;
 
 OnAlphaFlash:
-	if( getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" )
-	{
+	if (getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF") {
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		viewpointmap "bat_b02",1, .@x, .@y, 1, bg_get_data($@BG_Team1,4);
 		specialeffect 73;
@@ -183,8 +173,7 @@ OnAlphaFlash:
 	end;
 
 OnOmegaFlash:
-	if( getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" )
-	{
+	if (getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF") {
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		viewpointmap "bat_b02",1, .@x, .@y, 2, bg_get_data($@BG_Team2,4);
 		specialeffect 73;
@@ -202,11 +191,11 @@ OnInit:
 OnTeam1Quit:
 	setquest 8600; // Deserter
 	set @killer_bg_src, 0;
-	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" )
+	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 OnTeam1Die:
-	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) )
-	{ // Drop Flag
+	// Drop Flag
+	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0)) {
 		set getvariableofnpc(.Flag_Carrier,"Team2_Flag"), 0;
 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 		getmapxy .@m$, .@x, .@y, BL_PC;
@@ -223,11 +212,11 @@ OnTeam1Die:
 OnTeam2Quit:
 	setquest 8600; // Deserter
 	set @killer_bg_src, 0;
-	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" )
+	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 OnTeam2Die:
-	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) )
-	{ // Drop Flag
+	// Drop Flag
+	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0)) {
 		set getvariableofnpc(.Flag_Carrier,"Team1_Flag"), 0;
 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 		getmapxy .@m$, .@x, .@y, BL_PC;
@@ -247,7 +236,7 @@ OnBuildTeams:
 	end;
 
 OnReady:
-	if( getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF" )
+	if (getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF")
 		end;
 
 	initnpctimer;
@@ -266,7 +255,7 @@ OnReady:
 	end;
 
 OnMatchStart:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF" )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_CTF")
 		end;
 	// Reset Position Members
 	if (.Team1_Score || .Team2_Score) {
@@ -297,19 +286,19 @@ OnMatchStop:
 
 	viewpointmap "bat_b02",2, 0, 0, 1, 0x0000FF;
 	viewpointmap "bat_b02",2, 0, 0, 2, 0xFF0000;
-	
-	if( .Team1_Score > 2 )
-	{ // Team 1 Won
+
+	// Team 1 Won
+	if (.Team1_Score > 2) {
 		mapannounce "bat_b02","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius CTF!",1,bg_get_data($@BG_Team1,4);
 		donpcevent "Flavius_CTF::OnMatchEnd";
 	}
-	else if( .Team2_Score > 2 )
-	{ // Team 2 Won
+	// Team 2 Won
+	else if (.Team2_Score > 2) {
 		mapannounce "bat_b02","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius CTF!",1,bg_get_data($@BG_Team2,4);
 		donpcevent "Flavius_CTF::OnMatchEnd";
 	}
-	else
-	{ // Keep Playing
+	// Keep Playing
+	else {
 		sleep 8000;
 		donpcevent "Flavius_CTF::OnMatchStart";
 	}
@@ -330,9 +319,9 @@ OnTimer900000:
 	viewpointmap "bat_b02",2, 0, 0, 1, bg_get_data($@BG_Team1,4);
 	viewpointmap "bat_b02",2, 0, 0, 2, bg_get_data($@BG_Team2,4);
 
-	if( .Team1_Score > .Team2_Score )
+	if (.Team1_Score > .Team2_Score)
 		mapannounce "bat_b02","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius CTF!",1,bg_get_data($@BG_Team1,4);
-	else if( .Team1_Score < .Team2_Score )
+	else if (.Team1_Score < .Team2_Score)
 		mapannounce "bat_b02","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius CTF!",1,bg_get_data($@BG_Team2,4);
 	else
 		mapannounce "bat_b02","The battle is over. This is a Tie...!",1,0xA0522D;
@@ -351,18 +340,13 @@ OnMatchEnd:
 	// =======================================================
 	.@reward_win = 5;
 	.@reward_lose = 3;
-	if( .Team1_Score > .Team2_Score )
-	{
+	if (.Team1_Score > .Team2_Score) {
 		bg_reward $@BG_Team1,7829,.@reward_win,0,0,"BG_CTF",1,3,0;
 		bg_reward $@BG_Team2,7829,.@reward_lose,0,0,"BG_CTF",1,3,2;
-	}
-	else if( .Team2_Score > .Team1_Score )
-	{
+	} else if (.Team2_Score > .Team1_Score) {
 		bg_reward $@BG_Team1,7829,.@reward_lose,0,0,"BG_CTF",1,3,2;
 		bg_reward $@BG_Team2,7829,.@reward_win,0,0,"BG_CTF",1,3,0;
-	}
-	else
-	{
+	} else {
 		bg_reward $@BG_Team1,7829,.@reward_lose,0,0,"BG_CTF",1,3,1;
 		bg_reward $@BG_Team2,7829,.@reward_lose,0,0,"BG_CTF",1,3,1;
 	}
@@ -492,5 +476,5 @@ bat_b02	mapflag	nowarpto
 bat_b02	mapflag	noreturn
 bat_b02	mapflag	nobranch
 bat_b02	mapflag	nopenalty
-bat_b02	mapflag	noemergencycall
+bat_b02	mapflag	noecall
 bat_b02	mapflag	bg_consume

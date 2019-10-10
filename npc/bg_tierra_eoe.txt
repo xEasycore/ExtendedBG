@@ -1,13 +1,16 @@
-// (c) 2008 - 2012 eAmod Project; Andres Garbanzo / Zephyrus
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  10-10-2019
+// By:
+//  Easycore         (Zephyrus, original author)
 //
-//  - gaiaro.staff@yahoo.com
-//  - MSN andresjgm.cr@hotmail.com
-//  - Skype: Zephyrus_cr
-//  - Site: http://dev.terra-gaming.com
-//
-// This file is NOT public - you are not allowed to distribute it.
-// Authorized Server List : http://dev.terra-gaming.com/index.php?/topic/72-authorized-eamod-servers/
-// eAmod is a non Free, extended version of eAthena Ragnarok Private Server.
+// Contact:
+//    - Facebook: https://www.facebook.com/EasycoreRo/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#3412
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 
 // ==============================================================================
 // BattleGround System - Tierra Valley Eye of Storm
@@ -22,11 +25,11 @@
 OnTeam1Quit:
 	setquest 8600; // Deserter
 	set @killer_bg_src, 0;
-	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" )
+	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 OnTeam1Die:
-	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" && getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0) )
-	{ // Drop Flag
+	// Drop Flag
+	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" && getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0)) {
 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Neutral_Flag", .@x, .@y;
@@ -42,11 +45,11 @@ OnTeam1Die:
 OnTeam2Quit:
 	setquest 8600; // Deserter
 	set @killer_bg_src, 0;
-	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" )
+	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 OnTeam2Die:
-	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" && getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0) )
-	{ // Drop Flag
+	// Drop Flag
+	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" && getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0)) {
 		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Neutral_Flag", .@x, .@y;
@@ -65,7 +68,7 @@ OnBuildTeams:
 	end;
 
 OnReady:
-	if( getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" )
+	if (getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS")
 		end;
 
 	// BG Variables
@@ -87,8 +90,7 @@ OnReady:
 	end;
 
 OnFlash:
-	if( getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" )
-	{
+	if (getvariableofnpc(.Flag_Carrier,"Neutral_Flag") == getcharid(0) && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS") {
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		viewpointmap "bat_a02",1,.@x,.@y,3,0xFFFFFF;
 		specialeffect 73;
@@ -103,13 +105,10 @@ OnTeam1Flag:
 	set .@North, getvariableofnpc(.Owner,"North_Base");
 	set .@South, getvariableofnpc(.Owner,"South_Base");
 
-	if( .@North == .@South )
-	{
+	if (.@North == .@South) {
 		set .Team1_Score, .Team1_Score + 5;
 		mapannounce "bat_a02",bg_get_data($@BG_Team1,2) + " captured the Flag [+5 points]",1,0x0000FF;
-	}
-	else
-	{
+	} else {
 		set .Team1_Score, .Team1_Score + 3;
 		mapannounce "bat_a02",bg_get_data($@BG_Team1,2) + " captured the Flag [+3 points]",1,0x0000FF;
 	}
@@ -123,13 +122,10 @@ OnTeam2Flag:
 	set .@North, getvariableofnpc(.Owner,"North_Base");
 	set .@South, getvariableofnpc(.Owner,"South_Base");
 	
-	if( .@North == .@South )
-	{
+	if (.@North == .@South) {
 		set .Team2_Score, .Team2_Score + 5;
 		mapannounce "bat_a02",bg_get_data($@BG_Team2,2) + " captured the Flag [+5 points]",1,0xFF0000;
-	}
-	else
-	{
+	} else {
 		set .Team2_Score, .Team2_Score + 3;
 		mapannounce "bat_a02",bg_get_data($@BG_Team2,2) + " captured the Flag [+3 points]",1,0xFF0000;
 	}
@@ -139,17 +135,16 @@ OnTeam2Flag:
 	end;
 
 OnNorthScore:
-	if( set(.@North, getvariableofnpc(.Owner,"North_Base")) == 0 )
+	if (set(.@North, getvariableofnpc(.Owner,"North_Base")) == 0)
 		end; // No Owner
 	set .@South, getvariableofnpc(.Owner,"South_Base");
-	if( .@North == .@South )
-	{ // Double Domination
-		if( .@North == $@BG_Team1 )
+	// Double Domination
+	if (.@North == .@South) {
+		if (.@North == $@BG_Team1)
 			set .Team1_Score, .Team1_Score + 2;
 		else
 			set .Team2_Score, .Team2_Score + 2;
-	}
-	else if( .@North == $@BG_Team1 )
+	} else if (.@North == $@BG_Team1)
 		set .Team1_Score, .Team1_Score + 1;
 	else
 		set .Team2_Score, .Team2_Score + 1;
@@ -158,17 +153,16 @@ OnNorthScore:
 	end;
 	
 OnSouthScore:
-	if( set(.@South, getvariableofnpc(.Owner,"South_Base")) == 0 )
+	if (set(.@South, getvariableofnpc(.Owner,"South_Base")) == 0)
 		end; // No Owner
 	set .@North, getvariableofnpc(.Owner,"North_Base");
-	if( .@North == .@South )
-	{ // Double Domination
-		if( .@South == $@BG_Team1 )
+	// Double Domination
+	if (.@North == .@South) {
+		if (.@South == $@BG_Team1)
 			set .Team1_Score, .Team1_Score + 2;
 		else
 			set .Team2_Score, .Team2_Score + 2;
-	}
-	else if( .@South == $@BG_Team1 )
+	} else if (.@South == $@BG_Team1)
 		set .Team1_Score, .Team1_Score + 1;
 	else
 		set .Team2_Score, .Team2_Score + 1;
@@ -177,14 +171,14 @@ OnSouthScore:
 	end;
 
 OnValidateScore:
-	if( .Team1_Score > 99 )
+	if (.Team1_Score > 99)
 		set .Team1_Score, 99;
-	if( .Team2_Score > 99 )
+	if (.Team2_Score > 99)
 		set .Team2_Score, 99;
 
 	bg_updatescore "bat_a02",.Team1_Score,.Team2_Score; // Update Visual Score
 
-	if( .Team1_Score < 99 && .Team2_Score < 99 )
+	if (.Team1_Score < 99 && .Team2_Score < 99)
 		end; // No winners
 OnMatchEnd:
 
@@ -199,20 +193,21 @@ OnMatchEnd:
 	// =======================================================
 	.@reward_win = 5;
 	.@reward_lose = 3;
-	if( .Team1_Score >= 99 && .Team2_Score >= 99 )
-	{ // Tie
+
+	// Tie
+	if (.Team1_Score >= 99 && .Team2_Score >= 99) {
 		bg_reward $@BG_Team1,7828,.@reward_lose,0,0,"BG_EoE",1,0,1;
 		bg_reward $@BG_Team2,7828,.@reward_lose,0,0,"BG_EoE",1,0,1;
 		mapannounce "bat_a02","The battle is over. This is a Tie...!",1,0x4169E1;
 	}
-	else if( .Team1_Score >= 99 )
-	{ // Team 1 Won
+	// Team 1 Won
+	else if (.Team1_Score >= 99) {
 		bg_reward $@BG_Team1,7828,.@reward_win,0,0,"BG_EoE",1,0,0;
 		bg_reward $@BG_Team2,7828,.@reward_lose,0,0,"BG_EoE",1,0,2;
 		mapannounce "bat_a02","The " + bg_get_data($@BG_Team1,2) + " has won the Battle of Tierra EoS!",1,bg_get_data($@BG_Team1,4);
 	}
-	else if( .Team2_Score >= 99 )
-	{ // Team 2 Won
+	// Team 2 Won
+	else if (.Team2_Score >= 99) {
 		bg_reward $@BG_Team1,7828,.@reward_lose,0,0,"BG_EoE",1,0,2;
 		bg_reward $@BG_Team2,7828,.@reward_win,0,0,"BG_EoE",1,0,0;
 		mapannounce "bat_a02","The " + bg_get_data($@BG_Team2,2) + " has won the Battle of Tierra EoS!",1,bg_get_data($@BG_Team2,4);
@@ -232,12 +227,12 @@ OnMatchEnd:
 	end;
 
 OnBreak:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS")
 		end;
 
-	if( getcharid(4) == $@BG_Team1 )
+	if (getcharid(4) == $@BG_Team1)
 		mapannounce "bat_a02","Netraul Flag Taken by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
-	else if( getcharid(4) == $@BG_Team2 )
+	else if (getcharid(4) == $@BG_Team2)
 		mapannounce "bat_a02","Netraul Flag Taken by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
 	else end;
 
@@ -269,12 +264,12 @@ bat_a02,273,204,0	script	Neutral Flag::Neutral_Flag	1911,1,1,{
 	end;
 
 OnTouch:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" || Hp < 1 || .Flag_Status )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" || Hp < 1 || .Flag_Status)
 		end;
 
-	if( getcharid(4) == $@BG_Team1 )
+	if (getcharid(4) == $@BG_Team1)
 		mapannounce "bat_a02","Netraul Flag Taken by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
-	else if( getcharid(4) == $@BG_Team2 )
+	else if (getcharid(4) == $@BG_Team2)
 		mapannounce "bat_a02","Netraul Flag Taken by " + bg_get_data($@BG_Team2,2),1,bg_get_data($@BG_Team2,4);
 	else end;
 
@@ -300,8 +295,7 @@ OnTouch:
 
 OnTimer2000:
 	stopnpctimer;
-	if( .Flag_Status == 0 && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS" )
-	{
+	if (.Flag_Status == 0 && $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_EOS") {
 		getmapxy .@m$, .@x, .@y, BL_NPC;
 		viewpointmap "bat_a02",1,.@x,.@y,3,0xFFFFFF;
 		specialeffect 223;
@@ -318,7 +312,7 @@ OnDisable:
 	end;
 
 OnBase:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS")
 		end;
 
 	movenpc "Neutral_Flag",273,204;
@@ -338,13 +332,13 @@ bat_a02,173,345,0	script	North Base::North_Base	1911,3,3,{
 	end;
 
 OnTouch:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" || .Owner == 0 || .Owner != getcharid(4) || getvariableofnpc(.Flag_Carrier,"Neutral_Flag") != getcharid(0) )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" || .Owner == 0 || .Owner != getcharid(4) || getvariableofnpc(.Flag_Carrier,"Neutral_Flag") != getcharid(0))
 		end;
 
 	//bg_rankpoints "eos_flags",1;
 	set getvariableofnpc(.Flag_Carrier,"Neutral_Flag"), 0;
 	setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
-	if( .Owner == $@BG_Team1 )
+	if (.Owner == $@BG_Team1)
 		donpcevent "Tierra_EOS::OnTeam1Flag";
 	else
 		donpcevent "Tierra_EOS::OnTeam2Flag";
@@ -360,31 +354,27 @@ OnBase:
 
 OnTimer1000:
 	stopnpctimer;
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS")
 		end;
 
 	set .@Team1Count, bg_getareausers($@BG_Team1,"bat_a02",136,329,186,361);
 	set .@Team2Count, bg_getareausers($@BG_Team2,"bat_a02",136,329,186,361);
 	set .Balance, .Balance + set(.@Balance, .@Team1Count - .@Team2Count);
 
-	if( .Balance < -50 )
+	if (.Balance < -50)
 		set .Balance, -50;
-	else if( .Balance > 50 )
+	else if (.Balance > 50)
 		set .Balance, 50;
 
-	if( .Owner == 0 )
-	{
-		if( .Balance == 50 )
-		{
+	if (.Owner == 0) {
+		if (.Balance == 50) {
 			set .Balance, 50;
 			set .Owner, $@BG_Team1; // Team 1
 			setnpcdisplay "North_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
 			mapannounce "bat_a02","North Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
 			//bg_rankpoints_area $@BG_Team1,"bat_a02",136,329,186,361,"eos_bases",1;
 			donpcevent "GEoSNBW::OnEnable";
-		}
-		else if( .Balance == -50 )
-		{
+		} else if (.Balance == -50) {
 			set .Balance, -50;
 			set .Owner, $@BG_Team2; // Team 2
 			setnpcdisplay "North_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
@@ -392,21 +382,15 @@ OnTimer1000:
 			//bg_rankpoints_area $@BG_Team2,"bat_a02",136,329,186,361,"eos_bases",1;
 			donpcevent "CEoSNBW::OnEnable";
 		}
-	}
-	else if( .Owner == $@BG_Team1 )
-	{
-		if( .Balance <= 0 )
-		{ // Team 1 lost Control
+	} else if (.Owner == $@BG_Team1) {
+		if (.Balance <= 0) { // Team 1 lost Control
 			set .Owner, 0;
 			setnpcdisplay "North_Base","North Base",1911;
 			mapannounce "bat_a02",bg_get_data($@BG_Team1,2) + " lost control of the North Base",1,bg_get_data($@BG_Team1,4);
 			donpcevent "GEoSNBW::OnDisable";
 		}
-	}
-	else if( .Owner == $@BG_Team2 )
-	{
-		if( .Balance >= 0 )
-		{ // Team 2 lost Control
+	} else if (.Owner == $@BG_Team2) {
+		if (.Balance >= 0) { // Team 2 lost Control
 			set .Owner, 0;
 			setnpcdisplay "North_Base","North Base",1911;
 			mapannounce "bat_a02",bg_get_data($@BG_Team2,2) + " lost control of the North Base",1,bg_get_data($@BG_Team2,4);
@@ -414,28 +398,27 @@ OnTimer1000:
 		}
 	}
 
-	if( .@Balance > 0 )
+	if (.@Balance > 0)
 		specialeffect 236;
-	else if( .@Balance < 0 )
+	else if (.@Balance < 0)
 		specialeffect 225;
-	else if( .Owner == $@BG_Team1 )
+	else if (.Owner == $@BG_Team1)
 		specialeffect 236;
-	else if( .Owner == $@BG_Team2 )
+	else if (.Owner == $@BG_Team2)
 		specialeffect 225;
 	else
 		specialeffect 223;
 	
-	if( .Owner == 0 )
+	if (.Owner == 0)
 		viewpointmap "bat_a02",1,173,345,1,0xFFFFFF;
-	else if( .Owner == $@BG_Team1 )
+	else if (.Owner == $@BG_Team1)
 		viewpointmap "bat_a02",1,173,345,1,bg_get_data($@BG_Team1,4);
-	else if( .Owner == $@BG_Team2 )
+	else if (.Owner == $@BG_Team2)
 		viewpointmap "bat_a02",1,173,345,1,bg_get_data($@BG_Team2,4);
 
-	if( .Owner == 0 )
+	if (.Owner == 0)
 		set .Tick, 0;
-	else if( set(.Tick, .Tick + 1) == 7 )
-	{
+	else if (set(.Tick, .Tick + 1) == 7) {
 		donpcevent "Tierra_EOS::OnNorthScore";
 		set .Tick, 0;
 	}
@@ -448,13 +431,13 @@ bat_a02,164,50,0	script	South Base::South_Base	1911,3,3,{
 	end;
 
 OnTouch:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" || .Owner == 0 || .Owner != getcharid(4) || getvariableofnpc(.Flag_Carrier,"Neutral_Flag") != getcharid(0) )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" || .Owner == 0 || .Owner != getcharid(4) || getvariableofnpc(.Flag_Carrier,"Neutral_Flag") != getcharid(0))
 		end;
 
 	//bg_rankpoints "eos_flags",1;
 	set getvariableofnpc(.Flag_Carrier,"Neutral_Flag"), 0;
 	setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
-	if( .Owner == $@BG_Team1 )
+	if (.Owner == $@BG_Team1)
 		donpcevent "Tierra_EOS::OnTeam1Flag";
 	else
 		donpcevent "Tierra_EOS::OnTeam2Flag";
@@ -470,31 +453,27 @@ OnBase:
 
 OnTimer1000:
 	stopnpctimer;
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS")
 		end;
 
 	set .@Team1Count, bg_getareausers($@BG_Team1,"bat_a02",129,34,175,65);
 	set .@Team2Count, bg_getareausers($@BG_Team2,"bat_a02",129,34,175,65);
 	set .Balance, .Balance + set(.@Balance, .@Team1Count - .@Team2Count);
 
-	if( .Balance < -50 )
+	if (.Balance < -50)
 		set .Balance, -50;
-	else if( .Balance > 50 )
+	else if (.Balance > 50)
 		set .Balance, 50;
 
-	if( .Owner == 0 )
-	{
-		if( .Balance == 50 )
-		{
+	if (.Owner == 0) {
+		if (.Balance == 50) {
 			set .Balance, 50;
 			set .Owner, $@BG_Team1; // Team 1
 			setnpcdisplay "South_Base",bg_get_data($@BG_Team1,2) + " Base",1912;
 			mapannounce "bat_a02","South Base captured by " + bg_get_data($@BG_Team1,2),1,bg_get_data($@BG_Team1,4);
 			//bg_rankpoints_area $@BG_Team1,"bat_a02",129,34,175,65,"eos_bases",1;
 			donpcevent "GEoSSBW::OnEnable";
-		}
-		else if( .Balance == -50 )
-		{
+		} else if (.Balance == -50) {
 			set .Balance, -50;
 			set .Owner, $@BG_Team2; // Team 2
 			setnpcdisplay "South_Base",bg_get_data($@BG_Team2,2) + " Base",1913;
@@ -502,21 +481,15 @@ OnTimer1000:
 			//bg_rankpoints_area $@BG_Team2,"bat_a02",129,34,175,65,"eos_bases",1;
 			donpcevent "CEoSSBW::OnEnable";
 		}
-	}
-	else if( .Owner == $@BG_Team1 )
-	{
-		if( .Balance <= 0 )
-		{ // Team 1 lost Control
+	} else if (.Owner == $@BG_Team1) {
+		if (.Balance <= 0) { // Team 1 lost Control
 			set .Owner, 0;
 			setnpcdisplay "South_Base","North Base",1911;
 			mapannounce "bat_a02",bg_get_data($@BG_Team1,2) + " lost control of the South Base",1,bg_get_data($@BG_Team1,4);
 			donpcevent "GEoSSBW::OnDisable";
 		}
-	}
-	else if( .Owner == $@BG_Team2 )
-	{
-		if( .Balance >= 0 )
-		{ // Team 2 lost Control
+	} else if (.Owner == $@BG_Team2) {
+		if (.Balance >= 0) { // Team 2 lost Control
 			set .Owner, 0;
 			setnpcdisplay "South_Base","North Base",1911;
 			mapannounce "bat_a02",bg_get_data($@BG_Team2,2) + " lost control of the South Base",1,bg_get_data($@BG_Team2,4);
@@ -524,28 +497,27 @@ OnTimer1000:
 		}
 	}
 
-	if( .@Balance > 0 )
+	if (.@Balance > 0)
 		specialeffect 236;
-	else if( .@Balance < 0 )
+	else if (.@Balance < 0)
 		specialeffect 225;
-	else if( .Owner == $@BG_Team1 )
+	else if (.Owner == $@BG_Team1)
 		specialeffect 236;
-	else if( .Owner == $@BG_Team2 )
+	else if (.Owner == $@BG_Team2)
 		specialeffect 225;
 	else
 		specialeffect 223;
 	
-	if( .Owner == 0 )
+	if (.Owner == 0)
 		viewpointmap "bat_a02",1,164,50,2,0xFFFFFF;
-	else if( .Owner == $@BG_Team1 )
+	else if (.Owner == $@BG_Team1)
 		viewpointmap "bat_a02",1,164,50,2,bg_get_data($@BG_Team1,4);
-	else if( .Owner == $@BG_Team2 )
+	else if (.Owner == $@BG_Team2)
 		viewpointmap "bat_a02",1,164,50,2,bg_get_data($@BG_Team2,4);
 
-	if( .Owner == 0 )
+	if (.Owner == 0)
 		set .Tick, 0;
-	else if( set(.Tick, .Tick + 1) == 7 )
-	{
+	else if (set(.Tick, .Tick + 1) == 7) {
 		donpcevent "Tierra_EOS::OnSouthScore";
 		set .Tick, 0;
 	}
@@ -587,33 +559,33 @@ bat_a02,45,18,3	script	Therapist in battle#eoe1	4_F_SISTER,{
 bat_a02,46,377,0	script	North Base Warp::GEoSNBW	1_SHADOW_NPC,{
 	end;
 
-OnEnable:
-	waitingroom "Join To Warp",20;
-	end;
+	OnEnable:
+		waitingroom "Join To Warp",20;
+		end;
 
-OnDisable:
-	delwaitingroom;
-	end;
+	OnDisable:
+		delwaitingroom;
+		end;
 
-OnWarp:
-	warpwaitingpc "bat_a02",115,346,20;
-	end;
+	OnWarp:
+		warpwaitingpc "bat_a02",115,346,20;
+		end;
 }
 
 bat_a02,53,370,0	script	South Base Warp::GEoSSBW	1_SHADOW_NPC,{
 	end;
 
-OnEnable:
-	waitingroom "Join To Warp",20;
-	end;
+	OnEnable:
+		waitingroom "Join To Warp",20;
+		end;
 
-OnDisable:
-	delwaitingroom;
-	end;
+	OnDisable:
+		delwaitingroom;
+		end;
 
-OnWarp:
-	warpwaitingpc "bat_a02",106,48,20;
-	end;
+	OnWarp:
+		warpwaitingpc "bat_a02",106,48,20;
+		end;
 }
 
 // *********************************************************************
@@ -621,33 +593,33 @@ OnWarp:
 bat_a02,38,19,0	script	North Base Warp::CEoSNBW	1_SHADOW_NPC,{
 	end;
 
-OnEnable:
-	waitingroom "Join To Warp",20;
-	end;
+	OnEnable:
+		waitingroom "Join To Warp",20;
+		end;
 
-OnDisable:
-	delwaitingroom;
-	end;
+	OnDisable:
+		delwaitingroom;
+		end;
 
-OnWarp:
-	warpwaitingpc "bat_a02",115,346,20;
-	end;
+	OnWarp:
+		warpwaitingpc "bat_a02",115,346,20;
+		end;
 }
 
 bat_a02,45,12,0	script	South Base Warp::CEoSSBW	1_SHADOW_NPC,{
 	end;
 
-OnEnable:
-	waitingroom "Join To Warp",20;
-	end;
+	OnEnable:
+		waitingroom "Join To Warp",20;
+		end;
 
-OnDisable:
-	delwaitingroom;
-	end;
+	OnDisable:
+		delwaitingroom;
+		end;
 
-OnWarp:
-	warpwaitingpc "bat_a02",106,48,20;
-	end;
+	OnWarp:
+		warpwaitingpc "bat_a02",106,48,20;
+		end;
 }
 
 // *********************************************************************
@@ -655,49 +627,49 @@ OnWarp:
 bat_a02,50,374,0	script	#guieoe_respawn	HIDDEN_WARP_NPC,{
 	end;
 
-OnBGStart:
-	initnpctimer;
-	end;
+	OnBGStart:
+		initnpctimer;
+		end;
 
-OnBGStop:
-	stopnpctimer;
-	end;
+	OnBGStop:
+		stopnpctimer;
+		end;
 
-OnTimer24000:
-	specialeffect 83;
-	end;
+	OnTimer24000:
+		specialeffect 83;
+		end;
 
-OnTimer25000:
-	areapercentheal "bat_a02",46,370,54,378,100,100;
-	donpcevent "GEoSNBW::OnWarp";
-	donpcevent "GEoSSBW::OnWarp";
-	areawarp "bat_a02",46,370,54,378,"bat_a02",353,344;
-	initnpctimer;
-	end;
+	OnTimer25000:
+		areapercentheal "bat_a02",46,370,54,378,100,100;
+		donpcevent "GEoSNBW::OnWarp";
+		donpcevent "GEoSSBW::OnWarp";
+		areawarp "bat_a02",46,370,54,378,"bat_a02",353,344;
+		initnpctimer;
+		end;
 }
 
 bat_a02,42,16,0	script	#croeoe_respawn	HIDDEN_WARP_NPC,{
 	end;
 
-OnBGStart:
-	initnpctimer;
-	end;
+	OnBGStart:
+		initnpctimer;
+		end;
 
-OnBGStop:
-	stopnpctimer;
-	end;
+	OnBGStop:
+		stopnpctimer;
+		end;
 
-OnTimer24000:
-	specialeffect 83;
-	end;
+	OnTimer24000:
+		specialeffect 83;
+		end;
 
-OnTimer25000:
-	areapercentheal "bat_a02",38,12,47,21,100,100;
-	donpcevent "CEoSNBW::OnWarp";
-	donpcevent "CEoSSBW::OnWarp";
-	areawarp "bat_a02",38,12,47,21,"bat_a02",353,52;
-	initnpctimer;
-	end;
+	OnTimer25000:
+		areapercentheal "bat_a02",38,12,47,21,100,100;
+		donpcevent "CEoSNBW::OnWarp";
+		donpcevent "CEoSSBW::OnWarp";
+		areawarp "bat_a02",38,12,47,21,"bat_a02",353,52;
+		initnpctimer;
+		end;
 }
 
 // MapFlags
@@ -712,7 +684,7 @@ bat_a02	mapflag	nowarpto
 bat_a02	mapflag	noreturn
 bat_a02	mapflag	nobranch
 bat_a02	mapflag	nopenalty
-bat_a02	mapflag	noemergencycall
+bat_a02	mapflag	noecall
 bat_a02	mapflag	bg_consume
 
 // Eye of the Storm Effects
@@ -722,7 +694,7 @@ bat_a02,269,189,0	script	#stormef1	HIDDEN_WARP_NPC,{
 	end;
 
 OnStartStorm:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS" ) end;
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_EOS") end;
 
 	sleep (rand(15,40) * 1000);
 	specialeffect 622;

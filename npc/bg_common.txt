@@ -1,3 +1,17 @@
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  10-10-2019
+// By:
+//  Easycore         (Zephyrus, original author)
+//
+// Contact:
+//    - Facebook: https://www.facebook.com/EasycoreRo/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#3412
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+
 // ==============================================================================
 // BattleGround System - Common NPCs
 // ==============================================================================
@@ -34,26 +48,31 @@ OnInit:
 	// BG Message Colors
 	setarray .BG_Color$[0],	                "0xA0522D",    "0x808000",      "0xFFA500",       "0xDDA0DD",		"0x696969",		"0x4169E1",		"0x4169E1",		"0x3399FF",		"0x9ACD32";
 	setarray .BG_Color2[0],	                0xA0522D,    0x808000,      0xFFA500,       0xDDA0DD,		0x696969,		0x4169E1,		0x4169E1,		0x3399FF,		0x9ACD32;
-	// Team Building Mode : 0 = Lineal | 1 = Random | 2 = Class Priority | 3 = Faction Mode | 4 = Team Color ( by script set Bat_Team,N; )
+	// Team Building Mode : 0 = Lineal | 1 = Random | 2 = Class Priority | 3 = Faction Mode | 4 = Team Color (by script set Bat_Team,N;)
 	set .TeamMode, 2;
+	// Happy Hour - 1: Enabled | 0: Disabled
+	set .HappyHour, 1; 
+	// Happy Hour - Reward rates %
+	set .HappyHourRates, 100 + 20; // +20%
 	// Main Code
 	// *****************************************************
 	set .BG_Count, getarraysize(.BG_Arenas$);
 	set .BG_Queue, bg_queue_create("Battleground Arena","BG_Queue_Join::OnJoinEvent",80);
 	set .VS_Queue, bg_queue_create("Free For All Arena","BG_Queue_Join::OnVersusJoin",80);
+	set .HWE, 0;
 	// Move to Next Arena
-	if( $BG_Index >= .BG_Count ) set $BG_Index,0; // Restart Rotation
+	if ($BG_Index >= .BG_Count) set $BG_Index,0; // Restart Rotation
 	set .TotalArenas, getarraysize(.BG_Arenas$);
 	set .BG_Arena$,.BG_Arenas$[$BG_Index];
 	set .Ready, 1;
 	initnpctimer; // Rotation if BG don't start... Comment if you don't want to use this method
-	// Comment the next two lines if you don't want to allow @joinbg and @leavebg commands.
 	/* Commands */
 	// Admin/GM Commands
 	bindatcmd "bgstart","BG_Queue_Join::OnBGStartCommand",99,99;
 	bindatcmd "bgstop","BG_Queue_Join::OnBGStopCommand",99,99;
-	bindatcmd "bgmode","BG_Queue_Join::OnBGModeCommand",99,99;	// [Easycore]
+	bindatcmd "bgmode","BG_Queue_Join::OnBGModeCommand",99,99;		// [Easycore]
 	bindatcmd "bgsize","BG_Queue_Join::OnBGSizeCommand",99,99;		// [Easycore]
+	bindatcmd "bghappyhour","BG_Queue_Join::OnBGHHCommand",99,99;	// [Easycore]
 	// Player Commands
 	bindatcmd "joinbg","BG_Queue_Join::OnDoJoin",0,99;
 	bindatcmd "leavebg","BG_Queue_Join::OnDoLeave",0,99;
@@ -63,12 +82,12 @@ OnDoJoin: // @joinbg
 	if (getbattleflag("bg_eAmod_mode") == 0) {
 		message strcharinfo(0),"Battlegrounds are currently disabled.";
 		end;
-	} else if( agitcheck() || agitcheck2() ) {
+	} else if (agitcheck() || agitcheck2()) {
 		dispbottom "[Battleground is currently disabled for this moment due to War of Emperium.]";
 		end;
-	} else if( checkquest(8600,PLAYTIME) == 2 ) {
+	} else if (checkquest(8600,PLAYTIME) == 2) {
 		erasequest 8600;
-	} else if( checkquest(8600,PLAYTIME) == 0 ) {
+	} else if (checkquest(8600,PLAYTIME) == 0) {
 		dispbottom "[You are a Deserter. You can't participate until the indicator goes off]";
 		end;
 	}
@@ -124,6 +143,17 @@ OnBGSizeCommand:
 		setarray .BG_Max[0],.@x3,.@x3,.@x3,.@x3,.@x3,.@x3,.@x3,.@x3,.@x3;
 	}
 	end;
+// @bghappyhour
+OnBGHHCommand:
+	if (getbattleflag("bg_eAmod_mode") == 0) {
+		message strcharinfo(0),"Battlegrounds are currently disabled.";
+		end;
+	}
+	if (!.HWE)
+		donpcevent "BG_Queue_Join::OnDoHappyHour";
+	else
+		donpcevent "BG_Queue_Join::OnEndHappyHour";
+	end;
 OnBGStartCommand:
 	if (getbattleflag("bg_eAmod_mode") == 1) {
 		message strcharinfo(0),"Battlegrounds is already enabled.";
@@ -135,6 +165,8 @@ OnBGStartCommand:
 	callsub OnEndArena;
 OnBGStopCommand:
 	setbattleflag "bg_eAmod_mode", 0;
+	set .HWE, 0;
+	setbattleflag "bg_reward_rates",100; // Normal Rates
 	message strcharinfo(0),"Battlegrounds have been disabled.";
 	.@msg$ = "[Battlegrounds] Arenas and Queuing have been disabled by a Game Master.";
 	announce .@msg$, 0, 0x00FFFF, 0x190, 12, 100, 100;
@@ -159,81 +191,72 @@ OnTimer10000: // Rotation if BG don't start... Comment if you don't want to use 
 	if (getbattleflag("bg_eAmod_mode") == 0) end;
 
 	// Move to Next Arena
-	if( set($BG_Index,$BG_Index + 1) >= .BG_Count )
+	if (set($BG_Index,$BG_Index + 1) >= .BG_Count)
 		set $BG_Index,0; // Restart Rotation
 
 	set .BG_Arena$,.BG_Arenas$[$BG_Index];
 	initnpctimer; // Rotation if BG don't start... Comment if you don't want to use this method
 
 OnJoinEvent:
-	if( $@BG_Status == 2 )
+	if ($@BG_Status == 2)
 		end; // BG Ending... Must wait until OnRotate is called
 
 	set .@Queue_Count, bg_queue_data(.BG_Queue,0);
-	switch( $@BG_Status )
-	{
-	case 0: // Idle - Ready to Start
-		if( .BG_Arena$ == "Tierra_TI" )
-			set .@Req, .BG_Min[$BG_Index] * 3;
-		else
-			set .@Req, .BG_Min[$BG_Index] * 2;
-
-		if( bg_queue_checkstart(.BG_Queue,.TeamMode,( (.BG_Arena$ == "Tierra_TI") ? 3 : 2 ),.BG_Min[$BG_Index]) )
-		{
-			donpcevent .BG_Arena$ + "::OnBuildTeams";
-
-			// Fill Teams with Queue Members			
-			if( .BG_Arenas$[$BG_Index] == "Tierra_TI" )
-				bg_queue2teams .BG_Queue,.BG_Min[$BG_Index],.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2,$@BG_Team3;
+	switch($@BG_Status) {
+		case 0: // Idle - Ready to Start
+			if (.BG_Arena$ == "Tierra_TI")
+				set .@Req, .BG_Min[$BG_Index] * 3;
 			else
-				bg_queue2teams .BG_Queue,.BG_Min[$BG_Index],.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2;
+				set .@Req, .BG_Min[$BG_Index] * 2;
 
-			stopnpctimer; // Rotation if BG don't start... Comment if you don't want to use this method
+			if (bg_queue_checkstart(.BG_Queue,.TeamMode,((.BG_Arena$ == "Tierra_TI") ? 3 : 2),.BG_Min[$BG_Index])) {
+				donpcevent .BG_Arena$ + "::OnBuildTeams";
 
-			set $@BG_Status,1;
-			set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- Begining";
-			bgannounce .@msg$,.BG_Color$[$BG_Index];
+				// Fill Teams with Queue Members			
+				if (.BG_Arenas$[$BG_Index] == "Tierra_TI")
+					bg_queue2teams .BG_Queue,.BG_Min[$BG_Index],.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2,$@BG_Team3;
+				else
+					bg_queue2teams .BG_Queue,.BG_Min[$BG_Index],.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2;
 
-			donpcevent .BG_Arena$ + "::OnReady";
-		}
-		else
-		{
-			set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- " + (.@Req - .@Queue_Count) + " more players to start.";
-			bgannounce .@msg$,.BG_Color$[$BG_Index];
-		}
-		break;
-	case 1: // Running - Others can join
-		if( .@Queue_Count > 0 )
-		{
-			if( .BG_Arena$ == "Tierra_TI" )
-			{
-				bg_balance_teams .BG_Queue,.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2,$@BG_Team3;
-				set .@BG_Count1, bg_get_data($@BG_Team1,0);
-				set .@BG_Count2, bg_get_data($@BG_Team2,0);
-				set .@BG_Count3, bg_get_data($@BG_Team3,0);
-				set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- B: " + .@BG_Count1 + "/" + .BG_Max[$BG_Index] + ", R: " + .@BG_Count2 + "/" + .BG_Max[$BG_Index] + ", G: " + .@BG_Count3 + "/" + .BG_Max[$BG_Index] + " (Playing)";
+				stopnpctimer; // Rotation if BG don't start... Comment if you don't want to use this method
+
+				set $@BG_Status,1;
+				set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- Begining";
+				bgannounce .@msg$,.BG_Color$[$BG_Index];
+
+				donpcevent .BG_Arena$ + "::OnReady";
+			} else {
+				set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- " + (.@Req - .@Queue_Count) + " more players to start.";
+				bgannounce .@msg$,.BG_Color$[$BG_Index];
 			}
-			else
-			{
-				bg_balance_teams .BG_Queue,.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2;
-				set .@BG_Count1, bg_get_data($@BG_Team1,0);
-				set .@BG_Count2, bg_get_data($@BG_Team2,0);
-				set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- B: " + .@BG_Count1 + "/" + .BG_Max[$BG_Index] + ", R: " + .@BG_Count2 + "/" + .BG_Max[$BG_Index] + " (Playing)";
-			}
+			break;
+		case 1: // Running - Others can join
+			if (.@Queue_Count > 0) {
+				if (.BG_Arena$ == "Tierra_TI") {
+					bg_balance_teams .BG_Queue,.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2,$@BG_Team3;
+					set .@BG_Count1, bg_get_data($@BG_Team1,0);
+					set .@BG_Count2, bg_get_data($@BG_Team2,0);
+					set .@BG_Count3, bg_get_data($@BG_Team3,0);
+					set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- B: " + .@BG_Count1 + "/" + .BG_Max[$BG_Index] + ", R: " + .@BG_Count2 + "/" + .BG_Max[$BG_Index] + ", G: " + .@BG_Count3 + "/" + .BG_Max[$BG_Index] + " (Playing)";
+				} else {
+					bg_balance_teams .BG_Queue,.BG_Max[$BG_Index],.TeamMode,$@BG_Team1,$@BG_Team2;
+					set .@BG_Count1, bg_get_data($@BG_Team1,0);
+					set .@BG_Count2, bg_get_data($@BG_Team2,0);
+					set .@msg$, "Battleground -- " + .BG_Names$[$BG_Index] + " -- B: " + .@BG_Count1 + "/" + .BG_Max[$BG_Index] + ", R: " + .@BG_Count2 + "/" + .BG_Max[$BG_Index] + " (Playing)";
+				}
 
-			bgannounce .@msg$,.BG_Color$[$BG_Index];
-		}
-		break;
+				bgannounce .@msg$,.BG_Color$[$BG_Index];
+			}
+			break;
 	}
 	end;
 
 OnVersusJoin:
-	if( $@VS_Status != 0 )
+	if ($@VS_Status != 0)
 		end;
 
 	set .@Queue_Count, bg_queue_data(.VS_Queue,0);
-	if( .@Queue_Count >= 10 )
-	{
+	if (.@Queue_Count >= 10) {
 		donpcevent "FFA_Arena::OnBuildTeams";
 		bg_queue2teams .VS_Queue,1,1,0,$@VS_Team[0],$@VS_Team[1],$@VS_Team[2],$@VS_Team[3],$@VS_Team[4],$@VS_Team[5],$@VS_Team[6],$@VS_Team[7],$@VS_Team[8],$@VS_Team[9];
 		set $@VS_Status,1;
@@ -251,50 +274,19 @@ OnFri0600: // Friday, 6 a.m.
 // BattleGround Happy Hour
 OnDoHappyHour:
 OnClock1600:
-OnClock1800:
 OnClock2000:
+	if (getbattleflag("bg_eAmod_mode") == 0) end;
+	set .HWE, 1;
+	announce "-- Battleground Happy Hour has begun --",0,0x00FF00;
+	setbattleflag "bg_reward_rates",.HappyHourRates; // +20% Reward Rates
+	end;
+OnEndHappyHour:
+OnClock1800:
 OnClock2200:
-	switch( gettime(4) )
-	{
-	case 1:
-	case 3:
-	case 5:
-		if( gettime(3) >= 20 && gettime(3) < 22 )
-		{
-			//announce "-- Battleground Happy Hour has begun | Ranked Arena Mode --",0,0x00FF00;
-			//setbattleflag "bg_reward_rates",120; // +20% Reward Rates
-			//setbattleflag "bg_ranked_mode",1;
-			//end;
-		}
-		
-		if( gettime(3) == 22 )
-		{
-			//announce "-- Battleground Happy Hour is over | Regular Arena Mode --",0,0x00BFFF;
-			//setbattleflag "bg_reward_rates",100; // Normal Rates
-			//setbattleflag "bg_ranked_mode",0;
-			//end;
-		}
-		break;
-	case 2:
-	case 4:
-	case 6:
-		if( gettime(3) >= 16 && gettime(3) < 18 )
-		{
-			//announce "-- Battleground Happy Hour has begun | Ranked Arena Mode --",0,0x00FF00;
-			//setbattleflag "bg_reward_rates",120; // +20% Reward Rates
-			//setbattleflag "bg_ranked_mode",1;
-			//end;
-		}
-		
-		if( gettime(3) == 18 )
-		{
-			//announce "-- Battleground Happy Hour is over | Regular Arena Mode --",0,0x00BFFF;
-			//setbattleflag "bg_reward_rates",100; // Normal Rates
-			//setbattleflag "bg_ranked_mode",0;
-			//end;
-		}
-		break;
-	}
+	if (getbattleflag("bg_eAmod_mode") == 0) end;
+	set .HWE, 0;
+	announce "-- Battleground Happy Hour is over --",0,0x00BFFF;
+	setbattleflag "bg_reward_rates",100; // Normal Rates
 	end;
 }
 
@@ -302,32 +294,30 @@ OnClock2200:
 // *********************************************************************
 -	script	BG_Register	FAKE_NPC,{
 
-	if( getvariableofnpc(.Ready,"BG_Queue_Join") == 0 )
+	if (getvariableofnpc(.Ready,"BG_Queue_Join") == 0)
 		donpcevent "BG_Queue_Join::OnInit";
 
 	mes "[^FFA500Battle Recruiter^000000]";
 	mes "This is the Battleground Information and Registration service.";
 	mes "What do you want to do?";
 	next;
-	switch( select("^FFA500Battleground Arenas^000000:^0000FFFree For All Arena^000000:Warp to Battle Room") )
-	{
+	switch(select("^FFA500Battleground Arenas^000000:^0000FFFree For All Arena^000000:Warp to Battle Room")) {
 	case 1:
 		mes "[^FFA500Battle Recruiter^000000]";
 		mes "Battlegrounds Arena are different kinds of games where Teams fight for victory.";
 		mes "What do you want to do?";
 		next;
-		switch( select("Register:Party Register:Leave Queue:Battleground Help") )
-		{
+		switch(select("Register:Party Register:Leave Queue:Battleground Help")) {
 		case 1:
-			if( BaseLevel < 80 )
+			if (BaseLevel < 80)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "Min required level to join a battleground is 80.";
 				close;
 			}
-			if( checkquest(8600,PLAYTIME) == 2 )
+			if (checkquest(8600,PLAYTIME) == 2)
 				erasequest 8600;
-			if( checkquest(8600,PLAYTIME) == 1 )
+			if (checkquest(8600,PLAYTIME) == 1)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "You are a Deserter. You can't participate until the indicator goes off";
@@ -342,7 +332,7 @@ OnClock2200:
 			bg_queue_join getvariableofnpc(.BG_Queue,"BG_Queue_Join");
 			end;
 		case 2:
-			if( getcharid(1) == 0 )
+			if (getcharid(1) == 0)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "You are not on a Party.";
@@ -361,7 +351,7 @@ OnClock2200:
 			mes "If you are registered, you will be removed.";
 			mes "Are you sure?";
 			next;
-			if( select("Yes, leave queue:No, I will stay") == 2 )
+			if (select("Yes, leave queue:No, I will stay") == 2)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "Ok, nothing to change.";
@@ -377,7 +367,7 @@ OnClock2200:
 			mes "[^FFA500Battle Recruiter^000000]";
 			mes "Tell me... what battleground you don't understand?";
 			next;
-			switch( select("Capture the Flag:Team DeathMatch:Stone Control:Eye of Storm:Bossnia:Domination:Triple Inferno:Conquest:Rush") )
+			switch(select("Capture the Flag:Team DeathMatch:Stone Control:Eye of Storm:Bossnia:Domination:Triple Inferno:Conquest:Rush"))
 			{
 			case 1:
 				mes "[^FFA500Battle Recruiter^000000]";
@@ -471,18 +461,17 @@ OnClock2200:
 		mes "The target is to kill 25 players.";
 		mes "What do you want to do?";
 		next;
-		switch( select("Register:Leave Queue") )
-		{
+		switch(select("Register:Leave Queue")) {
 		case 1:
-			if( BaseLevel < 80 )
+			if (BaseLevel < 80)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "Min required level to join a battleground is 80.";
 				close;
 			}
-			if( checkquest(8600,PLAYTIME) == 2 )
+			if (checkquest(8600,PLAYTIME) == 2)
 				erasequest 8600;
-			if( checkquest(8600,PLAYTIME) == 1 )
+			if (checkquest(8600,PLAYTIME) == 1)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "You are a Deserter. You can't participate until the indicator goes off";
@@ -501,7 +490,7 @@ OnClock2200:
 			mes "If you are registered, you will be removed.";
 			mes "Are you sure?";
 			next;
-			if( select("Yes, leave queue:No, I will stay") == 2 )
+			if (select("Yes, leave queue:No, I will stay") == 2)
 			{
 				mes "[^FFA500Battle Recruiter^000000]";
 				mes "Ok, nothing to change.";
@@ -546,32 +535,31 @@ bat_room,160,159,3	script	General Guillaume	4_M_KY_KIYOM,{
 	mes "[General Guillaume]";
 	mes "This is however, not just a battle between us. This battle will determine the future of this country. I pledge on my honor to prove that I'm the one who can protect this Maroll from outside threats.";
 	next;
-	switch( select("Join the Blue Team","Join the Green Team","End Conversation") )
-	{
-	case 1:
-		cutin "bat_kiyom2",2;
-		mes "[General Guillaume]";
-		mes "Welcome to my army, comrade.";
-		mes "Your eyes tell me that you're a soldier that I can trust.";
-		set Bat_Team,1;
-		next;
-		mes "[General Guillaume]";
-		mes "Now, go upstairs and apply for battle with your comrades. I'm sure they'll welcome you whole-heartedly!";
-		break;
-	case 2:
-		cutin "bat_kiyom2",2;
-		mes "[General Guillaume]";
-		mes "So you will take this fight as your own...";
-		mes "Then you are my enemy.";
-		set Bat_Team,0;
-		next;
-		mes "[General Guillaume]";
-		mes "Go now, We will meet again in the Battlefield.";
-		break;
-	case 3:
-		mes "[General Guillaume]";
-		mes "I'll be the one who will capture the flag!";
-		break;
+	switch(select("Join the Blue Team","Join the Green Team","End Conversation")) {
+		case 1:
+			cutin "bat_kiyom2",2;
+			mes "[General Guillaume]";
+			mes "Welcome to my army, comrade.";
+			mes "Your eyes tell me that you're a soldier that I can trust.";
+			set Bat_Team,1;
+			next;
+			mes "[General Guillaume]";
+			mes "Now, go upstairs and apply for battle with your comrades. I'm sure they'll welcome you whole-heartedly!";
+			break;
+		case 2:
+			cutin "bat_kiyom2",2;
+			mes "[General Guillaume]";
+			mes "So you will take this fight as your own...";
+			mes "Then you are my enemy.";
+			set Bat_Team,0;
+			next;
+			mes "[General Guillaume]";
+			mes "Go now, We will meet again in the Battlefield.";
+			break;
+		case 3:
+			mes "[General Guillaume]";
+			mes "I'll be the one who will capture the flag!";
+			break;
 	}
 
 	close2;
@@ -594,26 +582,25 @@ bat_room,160,140,3	script	Prince Croix	4_M_CRU_CRUA,{
 	mes "General Guillaume may have an advantage in this battle as he is the great general of Maroll, but that doesn't automatically mean he'll win. I want to win this battle so that I can grant a better future for my people.";
 	next;
 	
-	switch( select("Join the Red Team","Join the Green Team","End Conversation") )
-	{
-	case 1:
-		mes "[Prince Croix]";
-		mes "Thank you so much. I feel like I can win with the help of adventurers like you. Now, please go downstairs and join your comrades in sharpening their skills to fight the enemy!";
-		set Bat_Team,2;
-		break;
-	case 2:
-		mes "[Prince Croix]";
-		mes "So you will take this fight as your own...";
-		mes "Then you are my enemy.";
-		set Bat_Team,0;
-		next;
-		mes "[Prince Croix]";
-		mes "Go now, We will meet again in the Battlefield.";
-		break;
-	case 3:
-		mes "[Prince Croix]";
-		mes "For Maroll!";
-		break;
+	switch(select("Join the Red Team","Join the Green Team","End Conversation")) {
+		case 1:
+			mes "[Prince Croix]";
+			mes "Thank you so much. I feel like I can win with the help of adventurers like you. Now, please go downstairs and join your comrades in sharpening their skills to fight the enemy!";
+			set Bat_Team,2;
+			break;
+		case 2:
+			mes "[Prince Croix]";
+			mes "So you will take this fight as your own...";
+			mes "Then you are my enemy.";
+			set Bat_Team,0;
+			next;
+			mes "[Prince Croix]";
+			mes "Go now, We will meet again in the Battlefield.";
+			break;
+		case 3:
+			mes "[Prince Croix]";
+			mes "For Maroll!";
+			break;
 	}	
 	
 	close2;
@@ -641,19 +628,18 @@ bat_room,148,150,4	script	Teleporter#bat	4_F_TELEPORTER,{
 	mes "[Teleporter]";
 	mes "Do you wish to leave the battlefield? Use my service to return to town.";
 	next;
-	if( select("Leave:Don't Leave") == 2 )
-	{
+	if (select("Leave:Don't Leave") == 2) {
 		mes "[Teleporter]";
 		mes "I'll be here whenever you're in need of my service.";
 		close;
 	}
-		set .@spoint$, getsavepoint(0);
-		set .@x, getsavepoint(1);
-		set .@y, getsavepoint(2);
-		mes "[Teleporter]";
-		mes "You will be sent back to " + .@spoint$ + ".";
-		close2;
-		warp .@spoint$, .@x, .@y;
+	set .@spoint$, getsavepoint(0);
+	set .@x, getsavepoint(1);
+	set .@y, getsavepoint(2);
+	mes "[Teleporter]";
+	mes "You will be sent back to " + .@spoint$ + ".";
+	close2;
+	warp .@spoint$, .@x, .@y;
 	end;
 }
 
@@ -679,125 +665,125 @@ bat_room,160,150,3	script	Erundek	4_M_MANAGER,{
 	mes "I can exchange Bravery Badges and Valor Badges for reward items.";
 	next;
 	switch(select("Exchange Badges", "Check the Catalog")) {
-	case 1:
-		mes "[Erundek]";
-		mes "Which type of items would you like to exchange?";
-		mes "To check more information about the reward items, please use our ^3131FFCatalog^000000.";
-		next;
-		switch(select("Weapon", "Armor", "Accessory", "Consumable")) {
 		case 1:
 			mes "[Erundek]";
-			mes "You chose ^3131FFWeapon^000000.";
-			mes "The following weapons are available for exchange with the battlefield badges.";
-			mes "Please note that items for ^3131FFBravery Badges are indicated as (BB)^000000, and ^3131FFValor Badges as (VB)^000000.";
+			mes "Which type of items would you like to exchange?";
+			mes "To check more information about the reward items, please use our ^3131FFCatalog^000000.";
 			next;
-			switch(select("Dagger/OneSword/TwoSword/TwoSpear", "Staff/Mace/TwoAxe/Shuriken", "Bow/Katar/Music/Whip", "Book/Knuckle", "Revolver/Rifle/Gatling/Shotgun/Launcher")) {
-			case 1:
-				mes "[Erundek]";
-				mes "The following items are available in the ^3131FFDagger, One-Handed Sword, Two-Handed Sword, and Two-Handed Spear^000000 category.";
-				next;
-				setarray .@Weapons[0],13036,7828,13037,7829,13411,7828,13410,7829,1183,7828,1184,7829,1425,7828,1482,7829;
-				break;
-			case 2:
-				mes "[Erundek]";
-				mes "The following items are available in the ^3131FFStaff / Mace / Two-Handed Axe / Huuma Shuriken^000000 category.";
-				next;
-				setarray .@Weapons[0],1632,7828,1633,7829,1634,7828,1635,7829,1543,7828,1542,7829,1380,7828,1379,7829,13305,7828,13306,7829;
-				break;
-			case 3:
-				mes "[Erundek]";
-				mes "The following weapons are available in the ^3131FFBow / Katar / Musical Instrument / Whip^000000 category.";
-				next;
-				setarray .@Weapons[0],1739,7828,1738,7829,1279,7828,1280,7829,1924,7828,1923,7829,1978,7828,1977,7829;
-				break;
-			case 4:
-				mes "[Erundek]";
-				mes "The following weapons are available in the ^3131FFBook / Knuckle^000000 category.";
-				next;
-				setarray .@Weapons[0],1574,7828,1575,7829,1824,7828,1823,7829;
-				break;
-			case 5:
-				mes "[Erundek]";
-				mes "The following weapons are available in the ^3131FFRevolver / Rifle / Gatling Gun / Shotgun / Grenade Launcher^000000 category.";
-				next;
-				setarray .@Weapons[0],13108,7828,13171,7829,13172,7828,13173,7829,13174,7829;
-				break;
-			}
-			.@menu$ = "";
-			for (.@i = 0; .@i < getarraysize(.@Weapons); .@i += 2)
-				.@menu$ += getitemname(.@Weapons[.@i])+((.@Weapons[.@i+1]==7828)?"(BB)":"(VB)")+":";
-			.@i = (select(.@menu$)-1)*2;
-			.@type$ = ((.@Weapons[.@i+1]==7828)?"(BB)":"(VB)");
-			mes "[Erundek]";
-			mes "You chose ^3131FF"+getitemname(.@Weapons[.@i])+.@type$+"^000000.";
-			mes "You can exchange for this item with ^FF0000100 "+getitemname(.@Weapons[.@i+1])+"^000000.";
-			mes "Would you like to exchange?";
-			next;
-			switch(select("Do not exchange", "Exchange")) {
-			case 1:
-				break;
-			case 2:
-				mes "[Erundek]";
-				mes "Would you like to spend ^FF0000100 "+getitemname(.@Weapons[.@i+1])+"^000000 and receive a ^3131FF"+getitemname(.@Weapons[.@i])+.@type$+"^000000?";
-				next;
-				mes "[Erundek]";
-				mes "Remember, Battleground Reward Items are ^FF0000Character Bound^000000. Are you sure you want this item?";
-				next;
-				switch(select("Yes", "No")) {
+			switch(select("Weapon", "Armor", "Accessory", "Consumable")) {
 				case 1:
 					mes "[Erundek]";
-					if (countitem(.@Weapons[.@i+1]) >= 100) {
-						mes "Thank you for exchanging.";
-						delitem .@Weapons[.@i+1],100;
-						getitem .@Weapons[.@i],1;
+					mes "You chose ^3131FFWeapon^000000.";
+					mes "The following weapons are available for exchange with the battlefield badges.";
+					mes "Please note that items for ^3131FFBravery Badges are indicated as (BB)^000000, and ^3131FFValor Badges as (VB)^000000.";
+					next;
+					switch(select("Dagger/OneSword/TwoSword/TwoSpear", "Staff/Mace/TwoAxe/Shuriken", "Bow/Katar/Music/Whip", "Book/Knuckle", "Revolver/Rifle/Gatling/Shotgun/Launcher")) {
+						case 1:
+							mes "[Erundek]";
+							mes "The following items are available in the ^3131FFDagger, One-Handed Sword, Two-Handed Sword, and Two-Handed Spear^000000 category.";
+							next;
+							setarray .@Weapons[0],13036,7828,13037,7829,13411,7828,13410,7829,1183,7828,1184,7829,1425,7828,1482,7829;
+							break;
+						case 2:
+							mes "[Erundek]";
+							mes "The following items are available in the ^3131FFStaff / Mace / Two-Handed Axe / Huuma Shuriken^000000 category.";
+							next;
+							setarray .@Weapons[0],1632,7828,1633,7829,1634,7828,1635,7829,1543,7828,1542,7829,1380,7828,1379,7829,13305,7828,13306,7829;
+							break;
+						case 3:
+							mes "[Erundek]";
+							mes "The following weapons are available in the ^3131FFBow / Katar / Musical Instrument / Whip^000000 category.";
+							next;
+							setarray .@Weapons[0],1739,7828,1738,7829,1279,7828,1280,7829,1924,7828,1923,7829,1978,7828,1977,7829;
+							break;
+						case 4:
+							mes "[Erundek]";
+							mes "The following weapons are available in the ^3131FFBook / Knuckle^000000 category.";
+							next;
+							setarray .@Weapons[0],1574,7828,1575,7829,1824,7828,1823,7829;
+							break;
+						case 5:
+							mes "[Erundek]";
+							mes "The following weapons are available in the ^3131FFRevolver / Rifle / Gatling Gun / Shotgun / Grenade Launcher^000000 category.";
+							next;
+							setarray .@Weapons[0],13108,7828,13171,7829,13172,7828,13173,7829,13174,7829;
+							break;
 					}
-					else mes "I'm sorry, but you don't have enough badges to exchange.";
+					.@menu$ = "";
+					for (.@i = 0; .@i < getarraysize(.@Weapons); .@i += 2)
+						.@menu$ += getitemname(.@Weapons[.@i])+((.@Weapons[.@i+1]==7828)?"(BB)":"(VB)")+":";
+					.@i = (select(.@menu$)-1)*2;
+					.@type$ = ((.@Weapons[.@i+1]==7828)?"(BB)":"(VB)");
+					mes "[Erundek]";
+					mes "You chose ^3131FF"+getitemname(.@Weapons[.@i])+.@type$+"^000000.";
+					mes "You can exchange for this item with ^FF0000100 "+getitemname(.@Weapons[.@i+1])+"^000000.";
+					mes "Would you like to exchange?";
+					next;
+					switch(select("Do not exchange", "Exchange")) {
+						case 1:
+							break;
+						case 2:
+							mes "[Erundek]";
+							mes "Would you like to spend ^FF0000100 "+getitemname(.@Weapons[.@i+1])+"^000000 and receive a ^3131FF"+getitemname(.@Weapons[.@i])+.@type$+"^000000?";
+							next;
+							mes "[Erundek]";
+							mes "Remember, Battleground Reward Items are ^FF0000Character Bound^000000. Are you sure you want this item?";
+							next;
+							switch(select("Yes", "No")) {
+							case 1:
+								mes "[Erundek]";
+								if (countitem(.@Weapons[.@i+1]) >= 100) {
+									mes "Thank you for exchanging.";
+									delitem .@Weapons[.@i+1],100;
+									getitem .@Weapons[.@i],1;
+								}
+								else mes "I'm sorry, but you don't have enough badges to exchange.";
+								close;
+							case 2:
+								break;
+							}
+							break;
+					}
+					mes "[Erundek]";
+					mes "Do you need more time to check the items?";
 					close;
 				case 2:
+					mes "[Erundek]";
+					mes "You chose ^3131FFArmor^000000.";
+					mes "The following armors are available for exchange with the battlefield badges.";
+					next;
+					switch(select("Garments / Shoes", "Armor")) {
+						case 1:
+							setarray .@items[0],2538,50,2539,50,2540,50,2435,50,2436,50,2437,50;
+							break;
+						case 2:
+							setarray .@items[0],2376,80,2377,80,2378,80,2379,80,2380,80,2381,80,2382,80;
+							break;
+						}
 					break;
-				}
-				break;
+				case 3:
+					mes "[Erundek]";
+					mes "You chose ^3131FFAccessory^000000.";
+					mes "You can exchange the Medal of Honors with your Badges according to the job classes, as follows:";
+					next;
+					setarray .@items[0],2733,500,2720,500,2721,500,2722,500,2723,500,2724,500,2725,500;
+					.@menu1$ = "Gunslinger:Swordman/Taekwon Master:Thief:Acolyte:Magician:Archer:Merchant";
+					break;
+				case 4:
+					mes "[Erundek]";
+					mes "You chose ^3131FFConsumable^000000.";
+					mes "The following consumable items are available for exchange with the battlefield badges:";
+					next;
+					setarray .@items[0],12269,10,12270,10,12271,5,12272,10,12273,10;
+					break;
 			}
-			mes "[Erundek]";
-			mes "Do you need more time to check the items?";
-			close;
+			break;
 		case 2:
 			mes "[Erundek]";
-			mes "You chose ^3131FFArmor^000000.";
-			mes "The following armors are available for exchange with the battlefield badges.";
-			next;
-			switch(select("Garments / Shoes", "Armor")) {
-			case 1:
-				setarray .@items[0],2538,50,2539,50,2540,50,2435,50,2436,50,2437,50;
-				break;
-			case 2:
-				setarray .@items[0],2376,80,2377,80,2378,80,2379,80,2380,80,2381,80,2382,80;
-				break;
-			}
-			break;
-		case 3:
-			mes "[Erundek]";
-			mes "You chose ^3131FFAccessory^000000.";
-			mes "You can exchange the Medal of Honors with your Badges according to the job classes, as follows:";
-			next;
-			setarray .@items[0],2733,500,2720,500,2721,500,2722,500,2723,500,2724,500,2725,500;
-			.@menu1$ = "Gunslinger:Swordman/Taekwon Master:Thief:Acolyte:Magician:Archer:Merchant";
-			break;
-		case 4:
-			mes "[Erundek]";
-			mes "You chose ^3131FFConsumable^000000.";
-			mes "The following consumable items are available for exchange with the battlefield badges:";
-			next;
-			setarray .@items[0],12269,10,12270,10,12271,5,12272,10,12273,10;
-			break;
-		}
-		break;
-	case 2:
-		mes "[Erundek]";
-		mes "We have many items, so please take a look and purchase deliberately.";
-		close2;
-		readbook 11010,1;
-		end;
+			mes "We have many items, so please take a look and purchase deliberately.";
+			close2;
+			readbook 11010,1;
+			end;
 	}
 	.@menu$ = "";
 	if (.@menu1$ != "") .@menu$ = .@menu1$;
@@ -820,34 +806,34 @@ bat_room,160,150,3	script	Erundek	4_M_MANAGER,{
 	mes "Would you like to exchange?";
 	next;
 	switch(select("Do not exchange", "Exchange")) {
-	case 1:
-		mes "[Erundek]";
-		mes "Do you need more time to check the items?";
-		break;
-	case 2:
-		mes "[Erundek]";
-		mes "Which Badge do you want to exchange?";
-		mes "You need ^3131FF"+.@items[.@i+1]+" Badges^000000 to exchange.";
-		next;
-		if (.@item[0] < 12269 || .@item[0] > 12273 ) {
+		case 1:
 			mes "[Erundek]";
-			mes "Remember, Battleground Reward Items are ^FF0000Character Bound^000000. Are you sure you want this item?";
-			next;
-		}
-		.@j = select("Bravery Badge", "Valor Badge", "Cancel");
-		mes "[Erundek]";
-		if (.@j == 3) {
-			mes "You cancelled the exchange.";
+			mes "Do you need more time to check the items?";
 			break;
-		}
-		.@cost = ((.@j==1)?7828:7829);
-		if (countitem(.@cost) >= .@items[.@i+1]) {
-			mes "Thank you for exchanging.";
-			delitem .@cost, .@items[.@i+1];
-			getitem .@items[.@i],1;
-		}
-		else mes "You do not have enough "+getitemname(.@cost)+"s.";
-		break;
+		case 2:
+			mes "[Erundek]";
+			mes "Which Badge do you want to exchange?";
+			mes "You need ^3131FF"+.@items[.@i+1]+" Badges^000000 to exchange.";
+			next;
+			if (.@item[0] < 12269 || .@item[0] > 12273) {
+				mes "[Erundek]";
+				mes "Remember, Battleground Reward Items are ^FF0000Character Bound^000000. Are you sure you want this item?";
+				next;
+			}
+			.@j = select("Bravery Badge", "Valor Badge", "Cancel");
+			mes "[Erundek]";
+			if (.@j == 3) {
+				mes "You cancelled the exchange.";
+				break;
+			}
+			.@cost = ((.@j==1)?7828:7829);
+			if (countitem(.@cost) >= .@items[.@i+1]) {
+				mes "Thank you for exchanging.";
+				delitem .@cost, .@items[.@i+1];
+				getitem .@items[.@i],1;
+			}
+			else mes "You do not have enough "+getitemname(.@cost)+"s.";
+			break;
 	}
 	close;
 }
@@ -898,7 +884,7 @@ S_BuyConsumableBG:
 		close;
 	}
 	mes "So you want ^0000FF"+ (.@amt*.@sets) +" "+ getitemname(.@item_id) +"s^000000...";
-	mes "Remember these can only be used in "+((.@item_id)?"BattleGround":"WoE Maps" );
+	mes "Remember these can only be used in "+((.@item_id)?"BattleGround":"WoE Maps");
 	mes "It will cost you "+ .@sets +" badge(s)...";
 	next;
 	switch(select("Give her "+ .@sets +" Bravery Badge(s):Give her "+ .@sets +" Valor Badge(s):Give her "+ (3*.@sets) +" Heroism Badges")) {
@@ -920,7 +906,7 @@ S_BuyConsumableBG:
 		else
 			getitem2 .@item_id,(.@amt*.@sets),1,0,0, 254, 0, .@woechar & 0xFFFF, .@woechar >> 0x10;
 		mes "Here are your: ^0000FF"+(.@amt*.@sets)+" "+getitemname(.@item_id)+"s^000000!";
-		mes "Remember they can only be used in "+((.@item_id)?"BattleGround":"WoE Maps" );
+		mes "Remember they can only be used in "+((.@item_id)?"BattleGround":"WoE Maps");
 	}
 	close;
 }

@@ -1,17 +1,20 @@
-/* (c) 2008 - 2012 eAmod Project; Andres Garbanzo  Zephyrus
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  10-10-2019
+// By:
+//  Easycore         (Zephyrus, original author)
+//
+// Contact:
+//    - Facebook: https://www.facebook.com/EasycoreRo/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#3412
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 
-  - gaiaro.staff@yahoo.com
-  - MSN andresjgm.cr@hotmail.com
-  - Skype Zephyrus_cr
-  - Site httpdev.terra-gaming.com
-
- This file is NOT public - you are not allowed to distribute it.
- Authorized Server List  httpdev.terra-gaming.comindex.phptopic72-authorized-eamod-servers
- eAmod is a non Free, extended version of eAthena Ragnarok Private Server.
-
- ==============================================================================
- BattleGround System - Tierra Bossnia
- ==============================================================================*/
+// ==============================================================================
+// BattleGround System - Tierra Bossnia
+// ==============================================================================*/
 
 -	script	Tierra_Boss	-1,{
 	end;

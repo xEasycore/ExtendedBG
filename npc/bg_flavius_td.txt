@@ -1,15 +1,16 @@
-// (c) 2008 - 2012 eAmod Project; Andres Garbanzo / Zephyrus
+//===== rAthena Script =======================================
+//    Extended Battleground
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+// Date:
+//  10-10-2019
+// By:
+//  Easycore         (Zephyrus, original author)
 //
-//  - gaiaro.staff@yahoo.com
-//  - MSN andresjgm.cr@hotmail.com
-//  - Skype: Zephyrus_cr
-//  - Site: http://dev.terra-gaming.com
-//
-// This file is NOT public - you are not allowed to distribute it.
-// Authorized Server List : http://dev.terra-gaming.com/index.php?/topic/72-authorized-eamod-servers/
-// eAmod is a non Free, extended version of eAthena Ragnarok Private Server.
-
-// ==============================================================================
+// Contact:
+//    - Facebook: https://www.facebook.com/EasycoreRo/
+//    - rAthena:  https://rathena.org/board/profile/16425-easycore/
+//    - Discord:  Easycore#3412
+//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
 // BattleGround System - Flavius TeamDeathMatch
 // ==============================================================================
 
@@ -21,11 +22,10 @@
 
 OnTeam1Quit:
 	setquest 8600; // Deserter
-	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD" )
+	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 OnTeam1Die:
-	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD" )
-	{
+	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD") {
 		if (killerrid == 0) end;
 		set .Team1_Score, .Team1_Score - 1;
 		donpcevent "Flavius_TD::OnValidateScore";
@@ -34,11 +34,10 @@ OnTeam1Die:
 
 OnTeam2Quit:
 	setquest 8600; // Deserter
-	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD" )
+	if ($@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD")
 		donpcevent "BG_Queue_Join::OnJoinEvent";
 OnTeam2Die:
-	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD" )
-	{
+	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_TD") {
 		if (killerrid == 0) end;
 		set .Team2_Score, .Team2_Score - 1;
 		donpcevent "Flavius_TD::OnValidateScore";
@@ -51,7 +50,7 @@ OnBuildTeams:
 	end;
 
 OnReady:
-	if( getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_TD" )
+	if (getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_TD")
 		end;
 
 	initnpctimer;
@@ -69,7 +68,7 @@ OnReady:
 	end;
 
 OnValidateScore:
-	if( $@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_TD" )
+	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Flavius_TD")
 		end;
 
 	bg_updatescore "bat_b03",.Team1_Score,.Team2_Score;
@@ -77,26 +76,26 @@ OnValidateScore:
 	set .@Team2Count, bg_get_data($@BG_Team2, 0);
 	.@reward_win = 5;
 	.@reward_lose = 3;
-	if( .Team2_Score <= 0 )
-	{ // Team 1 Won
+	// Team 1 Won
+	if (.Team2_Score <= 0) {
 		bg_reward $@BG_Team1,7829,.@reward_win,0,0,"BG_TDM",1,4,0;
 		bg_reward $@BG_Team2,7829,.@reward_lose,0,0,"BG_TDM",1,4,2;
 		mapannounce "bat_b03","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team1,4);
 	}
-	else if( .Team1_Score <= 0 )
-	{ // Team 2 Won
+	// Team 2 Won
+	else if (.Team1_Score <= 0) {
 		bg_reward $@BG_Team1,7829,.@reward_lose,0,0,"BG_TDM",1,4,2;
 		bg_reward $@BG_Team2,7829,.@reward_win,0,0,"BG_TDM",1,4,0;
 		mapannounce "bat_b03","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team2,4);
 	}
-	else if( .@Team2Count == 0 )
-	{ // All Team 2 Players quit
+	// All Team 2 Players quit
+	else if (.@Team2Count == 0) {
 		set .@Rate, 99 - .Team2_Score;
 		bg_reward $@BG_Team1,7829,.@reward_win,0,0,"BG_TDM",1,4,0;
 		mapannounce "bat_b03","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team1,4);
 	}
-	else if( .@Team1Count == 0 )
-	{ // All Team 1 Players quit
+	// All Team 1 Players quit
+	else if (.@Team1Count == 0) {
 		set .@Rate, 99 - .Team1_Score;
 		bg_reward $@BG_Team2,7829,.@reward_win,0,0,"BG_TDM",1,4,0;
 		mapannounce "bat_b03","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team2,4);
@@ -116,20 +115,19 @@ OnTimer840000:
 OnTimer900000:
 	.@reward_win = 5;
 	.@reward_lose = 3;
-	if( .Team1_Score > .Team2_Score )
-	{ // Team 1 Won
+	// Team 1 Won
+	if (.Team1_Score > .Team2_Score) {
 		bg_reward $@BG_Team1,7829,.@reward_win,0,0,"BG_TDM",1,4,0;
 		bg_reward $@BG_Team2,7829,.@reward_lose,0,0,"BG_TDM",1,4,2;
 		mapannounce "bat_b03","The " + bg_get_data($@BG_Team1,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team1,4);
 	}
-	else if( .Team1_Score < .Team2_Score )
-	{ // Team 2 Won
+	// Team 2 Won
+	else if (.Team1_Score < .Team2_Score) {
 		bg_reward $@BG_Team1,7829,.@reward_lose,0,0,"BG_TDM",1,4,2;
 		bg_reward $@BG_Team2,7829,.@reward_win,0,0,"BG_TDM",1,4,0;
 		mapannounce "bat_b03","The " + bg_get_data($@BG_Team2,2) + " army has won the Battle of Flavius TD!",1,bg_get_data($@BG_Team2,4);
 	}
-	else
-	{
+	else {
 		bg_reward $@BG_Team1,7829,.@reward_lose,0,0,"BG_TDM",1,4,1;
 		bg_reward $@BG_Team2,7829,.@reward_lose,0,0,"BG_TDM",1,4,1;
 		mapannounce "bat_b03","The battle is over. This is a Tie...!",1,0x808000;
