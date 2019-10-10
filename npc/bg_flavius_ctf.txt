@@ -36,8 +36,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		//pcblock 1,1; // Block Skills/Items
-		pcblockskill getcharid(3),1;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b02","Alpha Crystal Taken by [ " + strcharinfo(0) + " ]",1,bg_get_data($@BG_Team1,4);
 		//bg_rankpoints "ctf_taken",1;
@@ -53,8 +52,7 @@ OnTouch:
 			set .Flag_Carrier, 0;
 			mapannounce "bat_b02","Omega Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,bg_get_data($@BG_Team2,4);
 			//bg_rankpoints "ctf_captured",1;
-			//pcblock 1,0; // UnBlock Skills/Items
-			pcblockskill getcharid(3),0;
+			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 			stopnpctimer;
 			donpcevent "Flavius_CTF::OnTeam1Score";
 		}
@@ -112,8 +110,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		//pcblock 1,1; // Block Skills/Items
-		pcblockskill getcharid(3),1;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b02","Omega Crystal Taken by [ " + strcharinfo(0) + " ]",1,bg_get_data($@BG_Team2,4);
 		//bg_rankpoints "ctf_taken",1;
@@ -129,8 +126,7 @@ OnTouch:
 			set .Flag_Carrier, 0;
 			mapannounce "bat_b02","Alpha Crystal Captured by [ " + strcharinfo(0) + " ]!!",1,bg_get_data($@BG_Team1,4);
 			//bg_rankpoints "ctf_captured",1;
-			//pcblock 1,0; // UnBlock Skills/Items
-			pcblockskill getcharid(3),0;
+			setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 			stopnpctimer;
 			donpcevent "Flavius_CTF::OnTeam2Score";
 		}
@@ -212,8 +208,7 @@ OnTeam1Die:
 	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team2_Flag") == getcharid(0) )
 	{ // Drop Flag
 		set getvariableofnpc(.Flag_Carrier,"Team2_Flag"), 0;
-		//pcblock 1,0; // UnBlock Skills/Items
-		pcblockskill getcharid(3),0;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Team2_Flag", .@x, .@y;
 		mapannounce "bat_b02","Omega Flag Droped by [ " + strcharinfo(0) + " ]",1,bg_get_data($@BG_Team2,4);
@@ -234,8 +229,7 @@ OnTeam2Die:
 	if( $@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Flavius_CTF" && getvariableofnpc(.Flag_Carrier,"Team1_Flag") == getcharid(0) )
 	{ // Drop Flag
 		set getvariableofnpc(.Flag_Carrier,"Team1_Flag"), 0;
-		//pcblock 1,0; // UnBlock Skills/Items
-		pcblockskill getcharid(3),0;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 		getmapxy .@m$, .@x, .@y, BL_PC;
 		movenpc "Team1_Flag", .@x, .@y;
 		mapannounce "bat_b02","Alpha Flag Droped by [ " + strcharinfo(0) + " ]",1,bg_get_data($@BG_Team1,4);

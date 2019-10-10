@@ -182,7 +182,7 @@ OnTouch:
 	sc_end SC_CAMOUFLAGE;
 	sc_end SC__INVISIBILITY;
 
-	disable_items;
+	setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 	set getvariableofnpc(.Stone[.@Stone],"Flavius_SC"),getcharid(0);
 	addtimer 2000, "Flavius_SC::OnFlash";
@@ -234,7 +234,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -247,7 +247,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -292,7 +292,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -305,7 +305,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -350,7 +350,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -363,7 +363,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -408,7 +408,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -421,7 +421,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -466,7 +466,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -479,7 +479,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -524,7 +524,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Croix Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -537,7 +537,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Croix Stone captured by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -585,7 +585,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -598,7 +598,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -643,7 +643,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -656,7 +656,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -701,7 +701,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -714,7 +714,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -759,7 +759,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -772,7 +772,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -817,7 +817,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -830,7 +830,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
@@ -875,7 +875,7 @@ OnTouch:
 		sc_end SC_CAMOUFLAGE;
 		sc_end SC__INVISIBILITY;
 
-		disable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,true);
 
 		mapannounce "bat_b04","Guillaume Stone has been stolen by [ " + strcharinfo(0) + " ]",1,0xFF0000;
 
@@ -888,7 +888,7 @@ OnTouch:
 		set .Count, 0;
 		deltimer "Flavius_SC::OnFlash";
 
-		enable_items;
+		setpcblock(PCBLOCK_SKILL|PCBLOCK_USEITEM,false);
 
 		mapannounce "bat_b04","Guillaume Stone captured by [ " + strcharinfo(0) + " ]",1,0x0000FF;
 
