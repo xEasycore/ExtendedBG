@@ -15,13 +15,13 @@
  src/map/npc.hpp               |   2 +-
  src/map/pc.cpp                |  34 ++
  src/map/pc.hpp                |  16 +
- src/map/script.cpp            | 900 ++++++++++++++++++++++++++++++++++++++++--
+ src/map/script.cpp            | 901 ++++++++++++++++++++++++++++++++++++++++--
  src/map/skill.cpp             |  82 ++--
  src/map/storage.cpp           |   8 +
  src/map/trade.cpp             |   8 +
  src/map/unit.cpp              |   1 +
  src/map/vending.cpp           |   4 +
- 23 files changed, 2479 insertions(+), 120 deletions(-)
+ 23 files changed, 2480 insertions(+), 120 deletions(-)
 
 diff --git a/conf/battle/battleground.conf b/conf/battle/battleground.conf
 index 98b2dd8..098828d 100644
@@ -2322,7 +2322,7 @@ index fe641b5..67e37ed 100644
  int pc_level_penalty_mod(int level_diff, uint32 mob_class, enum e_mode mode, int type);
  #endif
 diff --git a/src/map/script.cpp b/src/map/script.cpp
-index b18e5c8..0f36222 100644
+index b18e5c8..a746f7b 100644
 --- a/src/map/script.cpp
 +++ b/src/map/script.cpp
 @@ -5507,6 +5507,156 @@ static int buildin_areawarp_sub(struct block_list *bl,va_list ap)
@@ -3292,7 +3292,7 @@ index b18e5c8..0f36222 100644
  /*==========================================
   * Instancing System
   *------------------------------------------*/
-@@ -24506,7 +25335,30 @@ struct script_function buildin_func[] = {
+@@ -24506,7 +25335,31 @@ struct script_function buildin_func[] = {
  	BUILDIN_DEF(bg_getareausers,"isiiii"),
  	BUILDIN_DEF(bg_updatescore,"sii"),
  	BUILDIN_DEF(bg_join,"i????"),
@@ -3321,6 +3321,7 @@ index b18e5c8..0f36222 100644
 +	BUILDIN_DEF(bg_reward, "iiiiisiii"),
 +	BUILDIN_DEF(bgannounce, "s?????"),
 +	BUILDIN_DEF(viewpointmap, "siiiii"),
++	BUILDIN_DEF(bg_monster_reveal,"iii"),
  
  	// Instancing
  	BUILDIN_DEF(instance_create,"s??"),
