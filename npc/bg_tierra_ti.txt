@@ -54,8 +54,8 @@ OnTeam3Die:
 		if (.@id8967) delitem 8967,.@id8967;
 		// Drop Skulls
 		if (.@id8965) makeitem 8965,.@id8965,"region_8",.@x,.@y;
-		if (.@id8966) makeitem 8966,.@id8965,"region_8",.@x,.@y;
-		if (.@id8967) makeitem 8967,.@id8965,"region_8",.@x,.@y;
+		if (.@id8966) makeitem 8966,.@id8966,"region_8",.@x,.@y;
+		if (.@id8967) makeitem 8967,.@id8967,"region_8",.@x,.@y;
 		// Drop a New Skull
 		if( @killer_bg_id != .@Bid )
 		{
@@ -64,7 +64,7 @@ OnTeam3Die:
 			else if( .@Bid == $@BG_Team2 )
 				makeitem 8966,1,"region_8",.@x,.@y;
 			else if( .@Bid == $@BG_Team3 )
-				makeitem 8967,.1,"region_8",.@x,.@y;
+				makeitem 8967,1,"region_8",.@x,.@y;
 		}
 	}
 	end;
