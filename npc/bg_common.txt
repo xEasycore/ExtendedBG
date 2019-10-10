@@ -145,6 +145,10 @@ OnBGSizeCommand:
 	end;
 // @bghappyhour
 OnBGHHCommand:
+	if (.HappyHour == ) {
+		message strcharinfo(0),"Happy Hour is currently disabled.";
+		end;
+	}
 	if (getbattleflag("bg_eAmod_mode") == 0) {
 		message strcharinfo(0),"Battlegrounds are currently disabled.";
 		end;
@@ -275,7 +279,7 @@ OnFri0600: // Friday, 6 a.m.
 OnDoHappyHour:
 OnClock1600:
 OnClock2000:
-	if (getbattleflag("bg_eAmod_mode") == 0) end;
+	if (getbattleflag("bg_eAmod_mode") == 0 || .HappyHour == 0) end;
 	set .HWE, 1;
 	announce "-- Battleground Happy Hour has begun --",0,0x00FF00;
 	setbattleflag "bg_reward_rates",.HappyHourRates; // +20% Reward Rates
@@ -283,7 +287,7 @@ OnClock2000:
 OnEndHappyHour:
 OnClock1800:
 OnClock2200:
-	if (getbattleflag("bg_eAmod_mode") == 0) end;
+	if (getbattleflag("bg_eAmod_mode" || .HappyHour == 0) == 0) end;
 	set .HWE, 0;
 	announce "-- Battleground Happy Hour is over --",0,0x00BFFF;
 	setbattleflag "bg_reward_rates",100; // Normal Rates
