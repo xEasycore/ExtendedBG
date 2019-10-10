@@ -1,9 +1,10 @@
  conf/battle/battleground.conf |  30 ++
+ conf/maps_athena.conf         |  22 ++
  src/common/mmo.hpp            |   1 +
  src/map/atcommand.cpp         | 141 +++++++
  src/map/battle.cpp            |   9 +
  src/map/battle.hpp            |  11 +
- src/map/battleground.cpp      | 877 +++++++++++++++++++++++++++++++++++++++--
+ src/map/battleground.cpp      | 882 +++++++++++++++++++++++++++++++++++++++--
  src/map/battleground.hpp      |  66 +++-
  src/map/clif.cpp              | 301 ++++++++++++--
  src/map/clif.hpp              |  11 +
@@ -12,10 +13,10 @@
  src/map/npc.hpp               |   2 +-
  src/map/pc.cpp                |  21 +
  src/map/pc.hpp                |  16 +
- src/map/script.cpp            | 896 ++++++++++++++++++++++++++++++++++++++++--
+ src/map/script.cpp            | 900 ++++++++++++++++++++++++++++++++++++++++--
  src/map/skill.cpp             |  75 ++--
  src/map/unit.cpp              |   1 +
- 23 files changed, 2402 insertions(+), 128 deletions(-)
+ 18 files changed, 2386 insertions(+), 116 deletions(-)
 
 diff --git a/conf/battle/battleground.conf b/conf/battle/battleground.conf
 index 98b2dd8..05002c1 100644
@@ -48,14 +49,44 @@ index 98b2dd8..05002c1 100644
 +// @order command behavior
 +// 0 - Display "Team Leader" as source
 +// 1 - Display "Character's Name" as source
-+bg_order_behavior: 0
++bg_order_behavior: 1
 +
 +// Balance the team.
 +bg_queue2team_balanced: 1
 +
 +// Rates as BG rewards (badges) are given. Note 3
 +bg_reward_rates: 100
-
+diff --git a/conf/maps_athena.conf b/conf/maps_athena.conf
+index e7972fa..752d929 100644
+--- a/conf/maps_athena.conf
++++ b/conf/maps_athena.conf
+@@ -1348,3 +1348,25 @@ map: 2012rwc_08
+ 
+ //------------------------- Clone Maps ---------------------------
+ //------------------------- Extra Maps ---------------------------
++map: bat_a03
++map: bat_a04
++map: bat_a05
++map: bat_b03
++map: bat_b04
++map: bat_b05
++map: bat_c04
++map: bat_c05
++map: bat_c06
++map: bat_c07
++map: bat_c08
++map: schg_cas06
++map: schg_cas07
++map: schg_cas08
++map: arug_cas06
++map: arug_cas07
++map: arug_cas08
++map: rush_cas01
++map: rush_cas02
++map: rush_cas03
++map: rush_cas04
++map: region_8
+\ No newline at end of file
 diff --git a/src/common/mmo.hpp b/src/common/mmo.hpp
 index 5a8a966..8f09c34 100644
 --- a/src/common/mmo.hpp
@@ -277,7 +308,7 @@ index ca4e38e..fc6da3b 100644
  #include "../custom/battle_config_struct.inc"
  };
 diff --git a/src/map/battleground.cpp b/src/map/battleground.cpp
-index 6fe752c..42f5bb9 100644
+index 6fe752c..4f9b401 100644
 --- a/src/map/battleground.cpp
 +++ b/src/map/battleground.cpp
 @@ -8,21 +8,50 @@
@@ -494,7 +525,18 @@ index 6fe752c..42f5bb9 100644
  int bg_team_delete(int bg_id)
  { // Deletes BG Team from db
  	int i;
-@@ -78,39 +255,93 @@ int bg_team_warp(int bg_id, unsigned short mapindex, short x, short y)
+@@ -72,45 +249,104 @@ int bg_team_warp(int bg_id, unsigned short mapindex, short x, short y)
+ 
+ 	if( bg == NULL )
+ 		return 0;
++	if( mapindex == 0 ) {
++		mapindex = bg->mapindex;
++		x = bg->x;
++		y = bg->y;
++	}
+ 
+ 	for( i = 0; i < MAX_BG_MEMBERS; i++ )
+ 		if( bg->members[i].sd != NULL ) pc_setpos(bg->members[i].sd, mapindex, x, y, CLR_TELEPORT);
  	return 1;
  }
  
@@ -603,7 +645,7 @@ index 6fe752c..42f5bb9 100644
  
  	clif_bg_hp(sd);
  	clif_bg_xy(sd);
-@@ -119,37 +350,92 @@ int bg_team_join(int bg_id, struct map_session_data *sd)
+@@ -119,37 +355,92 @@ int bg_team_join(int bg_id, struct map_session_data *sd)
  
  int bg_team_leave(struct map_session_data *sd, int flag)
  { // Single Player leaves team
@@ -709,7 +751,7 @@ index 6fe752c..42f5bb9 100644
  }
  
  int bg_member_respawn(struct map_session_data *sd)
-@@ -168,29 +454,44 @@ int bg_member_respawn(struct map_session_data *sd)
+@@ -168,29 +459,44 @@ int bg_member_respawn(struct map_session_data *sd)
  	return 1; // Warped
  }
  
@@ -757,7 +799,7 @@ index 6fe752c..42f5bb9 100644
  	switch( bl->type ) {
  		case BL_PC:
  			return ((TBL_PC*)bl)->bg_id;
-@@ -211,6 +512,13 @@ int bg_team_get_id(struct block_list *bl)
+@@ -211,6 +517,13 @@ int bg_team_get_id(struct block_list *bl)
  			if( ((TBL_HOM*)bl)->master )
  				return ((TBL_HOM*)bl)->master->bg_id;
  			break;
@@ -771,7 +813,7 @@ index 6fe752c..42f5bb9 100644
  		case BL_MER:
  			if( ((TBL_MER*)bl)->master )
  				return ((TBL_MER*)bl)->master->bg_id;
-@@ -241,21 +549,48 @@ int bg_send_message(struct map_session_data *sd, const char *mes, int len)
+@@ -241,21 +554,48 @@ int bg_send_message(struct map_session_data *sd, const char *mes, int len)
   */
  int bg_send_xy_timer_sub(DBKey key, DBData *data, va_list ap)
  {
@@ -828,7 +870,7 @@ index 6fe752c..42f5bb9 100644
  	}
  
  	return 0;
-@@ -268,14 +603,476 @@ int bg_send_xy_timer(int tid, unsigned int tick, int id, intptr_t data)
+@@ -268,14 +608,476 @@ int bg_send_xy_timer(int tid, unsigned int tick, int id, intptr_t data)
  	return 0;
  }
  
@@ -2134,7 +2176,7 @@ index fe641b5..67e37ed 100644
  int pc_level_penalty_mod(int level_diff, uint32 mob_class, enum e_mode mode, int type);
  #endif
 diff --git a/src/map/script.cpp b/src/map/script.cpp
-index b18e5c8..0490fe5 100644
+index b18e5c8..0f36222 100644
 --- a/src/map/script.cpp
 +++ b/src/map/script.cpp
 @@ -5507,6 +5507,156 @@ static int buildin_areawarp_sub(struct block_list *bl,va_list ap)
@@ -3022,7 +3064,18 @@ index b18e5c8..0490fe5 100644
  /// Adds attached player or <char id> (if specified) to an existing 
  /// battleground group and warps it to the specified coordinates on
  /// the given map.
-@@ -19685,7 +20488,7 @@ BUILDIN_FUNC(bg_leave)
+@@ -19627,7 +20430,9 @@ BUILDIN_FUNC(bg_warp)
+ 
+ 	bg_id = script_getnum(st,2);
+ 	map_name = script_getstr(st,3);
+-	if( (mapindex = mapindex_name2id(map_name)) == 0 )
++	if( !strcmp(map_name,"RespawnPoint") )
++		mapindex = 0;
++	else if( (mapindex = mapindex_name2id(map_name)) == 0 )
+ 		return SCRIPT_CMD_SUCCESS; // Invalid Map
+ 	x = script_getnum(st,4);
+ 	y = script_getnum(st,5);
+@@ -19685,7 +20490,7 @@ BUILDIN_FUNC(bg_leave)
  BUILDIN_FUNC(bg_destroy)
  {
  	int bg_id = script_getnum(st,2);
@@ -3031,7 +3084,7 @@ index b18e5c8..0490fe5 100644
  	return SCRIPT_CMD_SUCCESS;
  }
  
-@@ -19743,11 +20546,11 @@ BUILDIN_FUNC(bg_updatescore)
+@@ -19743,11 +20548,11 @@ BUILDIN_FUNC(bg_updatescore)
  
  BUILDIN_FUNC(bg_get_data)
  {
@@ -3045,7 +3098,7 @@ index b18e5c8..0490fe5 100644
  	{
  		script_pushint(st,0);
  		return SCRIPT_CMD_SUCCESS;
-@@ -19755,13 +20558,22 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19755,13 +20560,22 @@ BUILDIN_FUNC(bg_get_data)
  
  	switch( type )
  	{
@@ -3071,7 +3124,7 @@ index b18e5c8..0490fe5 100644
  		default:
  			ShowError("script:bg_get_data: unknown data identifier %d\n", type);
  			break;
-@@ -19770,6 +20582,21 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19770,6 +20584,21 @@ BUILDIN_FUNC(bg_get_data)
  	return SCRIPT_CMD_SUCCESS;
  }
  
@@ -3093,7 +3146,7 @@ index b18e5c8..0490fe5 100644
  /*==========================================
   * Instancing System
   *------------------------------------------*/
-@@ -24506,7 +25333,30 @@ struct script_function buildin_func[] = {
+@@ -24506,7 +25335,30 @@ struct script_function buildin_func[] = {
  	BUILDIN_DEF(bg_getareausers,"isiiii"),
  	BUILDIN_DEF(bg_updatescore,"sii"),
  	BUILDIN_DEF(bg_join,"i????"),
