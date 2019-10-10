@@ -1,9 +1,9 @@
- conf/battle/battleground.conf |  39 ++
+ conf/battle/battleground.conf |  42 ++
  conf/maps_athena.conf         |  23 ++
  src/common/mmo.hpp            |   1 +
- src/map/atcommand.cpp         | 216 +++++++++++
- src/map/battle.cpp            |  11 +
- src/map/battle.hpp            |  11 +
+ src/map/atcommand.cpp         | 215 +++++++++++
+ src/map/battle.cpp            |  12 +
+ src/map/battle.hpp            |  12 +
  src/map/battleground.cpp      | 879 ++++++++++++++++++++++++++++++++++++++++--
  src/map/battleground.hpp      |  61 ++-
  src/map/buyingstore.cpp       |   8 +-
@@ -16,18 +16,18 @@
  src/map/pc.hpp                |  17 +-
  src/map/script.cpp            | 876 ++++++++++++++++++++++++++++++++++++++++-
  src/map/script_constants.hpp  |   5 +
- src/map/skill.cpp             |  71 +++-
+ src/map/skill.cpp             |  80 ++--
  src/map/storage.cpp           |   8 +
  src/map/trade.cpp             |   8 +-
  src/map/unit.cpp              |   1 +
  src/map/vending.cpp           |   4 +
- 23 files changed, 2518 insertions(+), 110 deletions(-)
+ 23 files changed, 2527 insertions(+), 114 deletions(-)
 
 diff --git a/conf/battle/battleground.conf b/conf/battle/battleground.conf
-index f6ca66e30..c1886cd63 100644
+index f6ca66e30..8642ebcc7 100644
 --- a/conf/battle/battleground.conf
 +++ b/conf/battle/battleground.conf
-@@ -30,3 +30,42 @@ bg_flee_penalty: 20
+@@ -30,3 +30,45 @@ bg_flee_penalty: 20
  
  // Interval before updating the bg-member map mini-dots (milliseconds)
  bg_update_interval: 1000
@@ -70,6 +70,9 @@ index f6ca66e30..c1886cd63 100644
 +
 +// Allow/Deny trade BG consumables between players, gstorage (Note 1)
 +bg_can_trade: 1
++
++// Deny Double Login on Battleground (IP Based)) (Note 1)
++bg_double_login: 0
 \ No newline at end of file
 diff --git a/conf/maps_athena.conf b/conf/maps_athena.conf
 index e7972fa2d..eb7f1464a 100644
@@ -116,7 +119,7 @@ index a8fac05bf..af5fc2484 100644
  	unsigned short instance_id;
  	time_t last_leader_change;
 diff --git a/src/map/atcommand.cpp b/src/map/atcommand.cpp
-index 65a96186c..63d838a1c 100644
+index 68b49fb93..1774ff4a8 100644
 --- a/src/map/atcommand.cpp
 +++ b/src/map/atcommand.cpp
 @@ -22,6 +22,7 @@
@@ -127,10 +130,10 @@ index 65a96186c..63d838a1c 100644
  #include "channel.hpp"
  #include "chat.hpp"
  #include "chrif.hpp"
-@@ -10045,6 +10046,215 @@ ACMD_FUNC(camerainfo){
+@@ -10055,6 +10056,214 @@ ACMD_FUNC(resurrect) {
+ 
  	return 0;
  }
- 
 +/*==========================================
 +* Battleground Leader Commands
 +*------------------------------------------*/
@@ -339,14 +342,13 @@ index 65a96186c..63d838a1c 100644
 +	if( skilllv ) unit_skilluse_id(&sd->bl, sd->bl.id, skillnum, skilllv);
 +	return 0;
 +}
-+
+ 
  #include "../custom/atcommand.inc"
  
- /**
-@@ -10345,6 +10555,12 @@ void atcommand_basecommands(void) {
- 		ACMD_DEFR(limitedsale, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
+@@ -10357,6 +10566,12 @@ void atcommand_basecommands(void) {
  		ACMD_DEFR(changedress, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
  		ACMD_DEFR(camerainfo, ATCMD_NOCONSOLE|ATCMD_NOAUTOTRADE),
+ 		ACMD_DEFR(resurrect, ATCMD_NOCONSOLE),
 +		//BG eAmod [Easycore]
 +		ACMD_DEF(listenbg),
 +		ACMD_DEF(order),
@@ -357,10 +359,10 @@ index 65a96186c..63d838a1c 100644
  	AtCommandInfo* atcommand;
  	int i;
 diff --git a/src/map/battle.cpp b/src/map/battle.cpp
-index 56ae3b950..e95779674 100644
+index c9839c9e1..dcd3b13d2 100644
 --- a/src/map/battle.cpp
 +++ b/src/map/battle.cpp
-@@ -8525,6 +8525,17 @@ static const struct _battle_data {
+@@ -8531,6 +8531,18 @@ static const struct _battle_data {
  	{ "min_shop_sell",                      &battle_config.min_shop_sell,                   0,      0,      INT_MAX,        },
  	{ "feature.equipswitch",                &battle_config.feature_equipswitch,             1,      0,      1,              },
  	{ "pet_walk_speed",                     &battle_config.pet_walk_speed,                  1,      1,      3,              },
@@ -375,14 +377,15 @@ index 56ae3b950..e95779674 100644
 +	{ "bg_reserved_char_id",                &battle_config.bg_reserved_char_id,             999996, 0,      INT_MAX,        },
 +	{ "woe_reserved_char_id",				&battle_config.woe_reserved_char_id,            999997, 0,      INT_MAX,        },
 +	{ "bg_can_trade",				        &battle_config.bg_can_trade,                    1,      0,      1,              },
++	{ "bg_double_login",				    &battle_config.bg_double_login,                 1,      0,      1,              },
  
  #include "../custom/battle_config_init.inc"
  };
 diff --git a/src/map/battle.hpp b/src/map/battle.hpp
-index cffa0f363..634d1f4b3 100644
+index 996614d90..9a5fcb593 100644
 --- a/src/map/battle.hpp
 +++ b/src/map/battle.hpp
-@@ -660,6 +660,17 @@ struct Battle_Config
+@@ -659,6 +659,18 @@ struct Battle_Config
  	int min_shop_sell;
  	int feature_equipswitch;
  	int pet_walk_speed;
@@ -397,11 +400,12 @@ index cffa0f363..634d1f4b3 100644
 +	int bg_reserved_char_id;
 +	int woe_reserved_char_id;
 +	int bg_can_trade;
++	int bg_double_login;
  
  #include "../custom/battle_config_struct.inc"
  };
 diff --git a/src/map/battleground.cpp b/src/map/battleground.cpp
-index 990c8dde8..d2c6b97da 100644
+index 990c8dde8..6896c3133 100644
 --- a/src/map/battleground.cpp
 +++ b/src/map/battleground.cpp
 @@ -8,21 +8,50 @@
@@ -1360,7 +1364,7 @@ index 990c8dde8..d2c6b97da 100644
 +		clif_displaymessage(sd->fd, output);
 +		return 0;
 +	}
-+	if( bg_countlogin(sd,false) > 0 )
++	if( bg_countlogin(sd,false) > 0 && battle_config.bg_double_login)
 +	{
 +		sprintf(output,"You cannot join %s queue. Double Login detected.", qd->queue_name);
 +		clif_displaymessage(sd->fd,output);
@@ -1558,7 +1562,7 @@ index e79b4137b..5d78cf37b 100644
  		if( listidx == pl_sd->buyingstore.slots || pl_sd->buyingstore.items[listidx].amount == 0 )
  		{// there is no such item or the buyer has already bought all of them
 diff --git a/src/map/clif.cpp b/src/map/clif.cpp
-index b781d02a2..ae31dd44b 100644
+index b65f29f4d..b66f337dd 100644
 --- a/src/map/clif.cpp
 +++ b/src/map/clif.cpp
 @@ -390,16 +390,19 @@ int clif_send(const uint8* buf, int len, struct block_list* bl, enum send_target
@@ -1638,7 +1642,7 @@ index b781d02a2..ae31dd44b 100644
  				clif_sendbgemblem_single(sd->fd,tsd);
  			if ( tsd->status.robe )
  				clif_refreshlook(&sd->bl,bl->id,LOOK_ROBE,tsd->status.robe,SELF);
-@@ -8254,7 +8263,11 @@ void clif_guild_belonginfo(struct map_session_data *sd)
+@@ -8268,7 +8277,11 @@ void clif_guild_belonginfo(struct map_session_data *sd)
  
  	nullpo_retv(sd);
  	nullpo_retv(g = sd->guild);
@@ -1651,7 +1655,7 @@ index b781d02a2..ae31dd44b 100644
  	fd=sd->fd;
  	ps=guild_getposition(sd);
  	WFIFOHEAD(fd,packet_len(0x16c));
-@@ -8373,6 +8386,7 @@ void clif_guild_masterormember(struct map_session_data *sd)
+@@ -8387,6 +8400,7 @@ void clif_guild_masterormember(struct map_session_data *sd)
  void clif_guild_basicinfo(struct map_session_data *sd) {
  	int fd;
  	struct guild *g;
@@ -1659,7 +1663,7 @@ index b781d02a2..ae31dd44b 100644
  #if PACKETVER < 20160622
  	int cmd = 0x1b6;
  	int offset = NAME_LENGTH;
-@@ -8384,14 +8398,20 @@ void clif_guild_basicinfo(struct map_session_data *sd) {
+@@ -8398,14 +8412,20 @@ void clif_guild_basicinfo(struct map_session_data *sd) {
  	nullpo_retv(sd);
  	fd = sd->fd;
  
@@ -1682,7 +1686,7 @@ index b781d02a2..ae31dd44b 100644
  	WFIFOL(fd,14)=g->max_member;
  	WFIFOL(fd,18)=g->average_lv;
  	WFIFOL(fd,22)=(uint32)cap_value(g->exp,0,INT32_MAX);
-@@ -8422,7 +8442,9 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
+@@ -8436,7 +8456,9 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
  	struct guild *g;
  
  	nullpo_retv(sd);
@@ -1693,7 +1697,7 @@ index b781d02a2..ae31dd44b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8441,6 +8463,45 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
+@@ -8455,6 +8477,45 @@ void clif_guild_allianceinfo(struct map_session_data *sd)
  	WFIFOSET(fd,WFIFOW(fd,2));
  }
  
@@ -1739,7 +1743,7 @@ index b781d02a2..ae31dd44b 100644
  
  /// Guild member manager information
  /// 0154 <packet len>.W { <account>.L <char id>.L <hair style>.W <hair color>.W <gender>.W <class>.W <level>.W <contrib exp>.L <state>.L <position>.L <memo>.50B <name>.24B }* (ZC_MEMBERMGR_INFO)
-@@ -8467,7 +8528,15 @@ void clif_guild_memberlist(struct map_session_data *sd)
+@@ -8481,7 +8542,15 @@ void clif_guild_memberlist(struct map_session_data *sd)
  
  	if( (fd = sd->fd) == 0 )
  		return;
@@ -1756,7 +1760,7 @@ index b781d02a2..ae31dd44b 100644
  		return;
  
  	WFIFOHEAD(fd, g->max_member * size + 4);
-@@ -8507,7 +8576,10 @@ void clif_guild_positionnamelist(struct map_session_data *sd)
+@@ -8521,7 +8590,10 @@ void clif_guild_positionnamelist(struct map_session_data *sd)
  	struct guild *g;
  
  	nullpo_retv(sd);
@@ -1768,7 +1772,7 @@ index b781d02a2..ae31dd44b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8535,7 +8607,10 @@ void clif_guild_positioninfolist(struct map_session_data *sd)
+@@ -8549,7 +8621,10 @@ void clif_guild_positioninfolist(struct map_session_data *sd)
  	struct guild *g;
  
  	nullpo_retv(sd);
@@ -1780,7 +1784,7 @@ index b781d02a2..ae31dd44b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8642,8 +8717,8 @@ void clif_guild_emblem_area(struct block_list* bl)
+@@ -8656,8 +8731,8 @@ void clif_guild_emblem_area(struct block_list* bl)
  	//      (emblem in the flag npcs and emblem over the head in agit maps) [FlavioJS]
  	WBUFW(buf,0) = 0x1b4;
  	WBUFL(buf,2) = bl->id;
@@ -1791,7 +1795,7 @@ index b781d02a2..ae31dd44b 100644
  	clif_send(buf, 12, bl, AREA_WOS);
  }
  
-@@ -8657,7 +8732,10 @@ void clif_guild_skillinfo(struct map_session_data* sd)
+@@ -8671,7 +8746,10 @@ void clif_guild_skillinfo(struct map_session_data* sd)
  	int i,c;
  
  	nullpo_retv(sd);
@@ -1803,7 +1807,7 @@ index b781d02a2..ae31dd44b 100644
  		return;
  
  	fd = sd->fd;
-@@ -8804,7 +8882,10 @@ void clif_guild_expulsionlist(struct map_session_data* sd)
+@@ -8818,7 +8896,10 @@ void clif_guild_expulsionlist(struct map_session_data* sd)
  
  	nullpo_retv(sd);
  
@@ -1815,7 +1819,7 @@ index b781d02a2..ae31dd44b 100644
  		return;
  
  	fd = sd->fd;
-@@ -9510,6 +9591,7 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+@@ -9524,6 +9605,7 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
  		{
  			struct map_session_data *sd = (struct map_session_data *)bl;
  			struct party_data *p = NULL;
@@ -1823,7 +1827,7 @@ index b781d02a2..ae31dd44b 100644
  
  #if PACKETVER >= 20150513
  			WBUFW(buf, 0) = cmd = 0xa30;
-@@ -9543,7 +9625,15 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
+@@ -9557,7 +9639,15 @@ void clif_name( struct block_list* src, struct block_list *bl, send_target targe
  				WBUFB(buf,30) = 0;
  			}
  
@@ -1840,7 +1844,7 @@ index b781d02a2..ae31dd44b 100644
  				int position;
  
  				// Will get the position of the guild the player is in
-@@ -10115,6 +10205,8 @@ static bool clif_process_message(struct map_session_data* sd, bool whisperFormat
+@@ -10129,6 +10219,8 @@ static bool clif_process_message(struct map_session_data* sd, bool whisperFormat
  
  	if (battle_config.idletime_option&IDLE_CHAT)
  		sd->idletime = last_tick;
@@ -1849,7 +1853,7 @@ index b781d02a2..ae31dd44b 100644
  
  	return true;
  }
-@@ -10891,6 +10983,8 @@ void clif_parse_WalkToXY(int fd, struct map_session_data *sd)
+@@ -10905,6 +10997,8 @@ void clif_parse_WalkToXY(int fd, struct map_session_data *sd)
  	//Set last idle time... [Skotlex]
  	if (battle_config.idletime_option&IDLE_WALK)
  		sd->idletime = last_tick;
@@ -1858,7 +1862,7 @@ index b781d02a2..ae31dd44b 100644
  
  	unit_walktoxy(&sd->bl, x, y, 4);
  }
-@@ -11105,6 +11199,8 @@ void clif_parse_Emotion(int fd, struct map_session_data *sd)
+@@ -11119,6 +11213,8 @@ void clif_parse_Emotion(int fd, struct map_session_data *sd)
  
  		if (battle_config.idletime_option&IDLE_EMOTION)
  			sd->idletime = last_tick;
@@ -1867,7 +1871,7 @@ index b781d02a2..ae31dd44b 100644
  
  		if (sd->state.block_action & PCBLOCK_EMOTION) {
  			clif_skill_fail(sd, 1, USESKILL_FAIL_LEVEL, 1);
-@@ -11188,6 +11284,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
+@@ -11202,6 +11298,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
  		pc_delinvincibletimer(sd);
  		if (battle_config.idletime_option&IDLE_ATTACK)
  			sd->idletime = last_tick;
@@ -1876,7 +1880,7 @@ index b781d02a2..ae31dd44b 100644
  		unit_attack(&sd->bl, target_id, action_type != 0);
  		break;
  	case 0x02: // sitdown
-@@ -11218,6 +11316,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
+@@ -11232,6 +11330,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
  
  		if (battle_config.idletime_option&IDLE_SIT)
  			sd->idletime = last_tick;
@@ -1885,7 +1889,7 @@ index b781d02a2..ae31dd44b 100644
  
  		pc_setsit(sd);
  		skill_sit(sd, true);
-@@ -11241,6 +11341,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
+@@ -11255,6 +11355,8 @@ void clif_parse_ActionRequest_sub(struct map_session_data *sd, int action_type,
  		if (pc_setstand(sd, false)) {
  			if (battle_config.idletime_option&IDLE_SIT)
  				sd->idletime = last_tick;
@@ -1894,7 +1898,7 @@ index b781d02a2..ae31dd44b 100644
  			skill_sit(sd, false);
  			clif_standing(&sd->bl);
  		}
-@@ -11498,6 +11600,8 @@ void clif_parse_DropItem(int fd, struct map_session_data *sd){
+@@ -11512,6 +11614,8 @@ void clif_parse_DropItem(int fd, struct map_session_data *sd){
  
  		if (battle_config.idletime_option&IDLE_DROPITEM)
  			sd->idletime = last_tick;
@@ -1903,7 +1907,7 @@ index b781d02a2..ae31dd44b 100644
  
  		return;
  	}
-@@ -11528,6 +11632,8 @@ void clif_parse_UseItem(int fd, struct map_session_data *sd)
+@@ -11542,6 +11646,8 @@ void clif_parse_UseItem(int fd, struct map_session_data *sd)
  	//Whether the item is used or not is irrelevant, the char ain't idle. [Skotlex]
  	if (battle_config.idletime_option&IDLE_USEITEM)
  		sd->idletime = last_tick;
@@ -1912,7 +1916,7 @@ index b781d02a2..ae31dd44b 100644
  	n = RFIFOW(fd,packet_db[RFIFOW(fd,0)].pos[0])-2;
  
  	if(n <0 || n >= MAX_INVENTORY)
-@@ -11575,6 +11681,8 @@ void clif_parse_EquipItem(int fd,struct map_session_data *sd)
+@@ -11589,6 +11695,8 @@ void clif_parse_EquipItem(int fd,struct map_session_data *sd)
  
  	if (battle_config.idletime_option&IDLE_USEITEM)
  		sd->idletime = last_tick;
@@ -1921,7 +1925,7 @@ index b781d02a2..ae31dd44b 100644
  
  	//Client doesn't send the position for ammo.
  	if(sd->inventory_data[index]->type == IT_AMMO)
-@@ -12255,6 +12363,8 @@ void clif_parse_skill_toid( struct map_session_data* sd, uint16 skill_id, uint16
+@@ -12269,6 +12377,8 @@ void clif_parse_skill_toid( struct map_session_data* sd, uint16 skill_id, uint16
  	// This is done here, because homunculi and mercenaries can be triggered by AI and not by the player itself
  	if (battle_config.idletime_option&IDLE_USESKILLTOID)
  		sd->idletime = last_tick;
@@ -1930,7 +1934,7 @@ index b781d02a2..ae31dd44b 100644
  
  	if( sd->npc_id ){
  		if( pc_hasprogress( sd, WIP_DISABLE_SKILLITEM ) || !sd->npc_item_flag || !( inf & INF_SELF_SKILL ) ){
-@@ -12317,7 +12427,25 @@ void clif_parse_skill_toid( struct map_session_data* sd, uint16 skill_id, uint16
+@@ -12331,7 +12441,25 @@ void clif_parse_skill_toid( struct map_session_data* sd, uint16 skill_id, uint16
  	sd->skillitem = sd->skillitemlv = 0;
  
  	if( SKILL_CHK_GUILD(skill_id) ) {
@@ -1957,7 +1961,7 @@ index b781d02a2..ae31dd44b 100644
  			skill_lv = guild_checkskill(sd->guild, skill_id);
  		else
  			skill_lv = 0;
-@@ -12379,6 +12507,8 @@ static void clif_parse_UseSkillToPosSub(int fd, struct map_session_data *sd, uin
+@@ -12393,6 +12521,8 @@ static void clif_parse_UseSkillToPosSub(int fd, struct map_session_data *sd, uin
  	//Whether skill fails or not is irrelevant, the char ain't idle. [Skotlex]
  	if (battle_config.idletime_option&IDLE_USESKILLTOPOS)
  		sd->idletime = last_tick;
@@ -1966,7 +1970,7 @@ index b781d02a2..ae31dd44b 100644
  
  	if( skill_isNotOk(skill_id, sd) )
  		return;
-@@ -13597,10 +13727,14 @@ void clif_parse_GuildChangeMemberPosition(int fd, struct map_session_data *sd)
+@@ -13611,10 +13741,14 @@ void clif_parse_GuildChangeMemberPosition(int fd, struct map_session_data *sd)
  void clif_parse_GuildRequestEmblem(int fd,struct map_session_data *sd)
  {
  	struct guild* g;
@@ -1982,7 +1986,7 @@ index b781d02a2..ae31dd44b 100644
  }
  
  
-@@ -17287,7 +17421,29 @@ void clif_readbook(int fd, int book_id, int page)
+@@ -17289,7 +17423,29 @@ void clif_readbook(int fd, int book_id, int page)
  
  /// Battlegrounds
  ///
@@ -2012,7 +2016,7 @@ index b781d02a2..ae31dd44b 100644
  /// Updates HP bar of a camp member.
  /// 02e0 <account id>.L <name>.24B <hp>.W <max hp>.W (ZC_BATTLEFIELD_NOTIFY_HP)
  /// 0a0e <account id>.L <hp>.L <max hp>.L (ZC_BATTLEFIELD_NOTIFY_HP2)
-@@ -17379,7 +17535,119 @@ void clif_bg_message( struct battleground_data *bg, int src_id, const char *name
+@@ -17381,7 +17537,119 @@ void clif_bg_message( struct battleground_data *bg, int src_id, const char *name
  
  	clif_send(buf,WBUFW(buf,2), &sd->bl, BG);
  }
@@ -2132,7 +2136,7 @@ index b781d02a2..ae31dd44b 100644
  /// Validates and processes battlechat messages.
  /// All messages that are sent after enabling battleground chat with /battlechat.
  /// 02DB <packet len>.W <text>.?B (CZ_BATTLEFIELD_CHAT)
-@@ -17413,6 +17681,7 @@ void clif_bg_updatescore(int16 m)
+@@ -17415,6 +17683,7 @@ void clif_bg_updatescore(int16 m)
  
  void clif_bg_updatescore_single(struct map_session_data *sd)
  {
@@ -2140,7 +2144,7 @@ index b781d02a2..ae31dd44b 100644
  	int fd;
  	nullpo_retv(sd);
  	fd = sd->fd;
-@@ -17421,8 +17690,13 @@ void clif_bg_updatescore_single(struct map_session_data *sd)
+@@ -17423,8 +17692,13 @@ void clif_bg_updatescore_single(struct map_session_data *sd)
  
  	WFIFOHEAD(fd,packet_len(0x2de));
  	WFIFOW(fd,0) = 0x2de;
@@ -2157,7 +2161,7 @@ index b781d02a2..ae31dd44b 100644
  }
  
 diff --git a/src/map/clif.hpp b/src/map/clif.hpp
-index 82240fe1c..09fcac594 100644
+index d19af27cc..95e35c386 100644
 --- a/src/map/clif.hpp
 +++ b/src/map/clif.hpp
 @@ -217,6 +217,7 @@ enum send_target : uint8_t {
@@ -2168,7 +2172,7 @@ index 82240fe1c..09fcac594 100644
  
  	CLAN,				// Clan System
  };
-@@ -820,6 +821,15 @@ void clif_bg_updatescore(int16 m);
+@@ -821,6 +822,15 @@ void clif_bg_updatescore(int16 m);
  void clif_bg_updatescore_single(struct map_session_data *sd);
  void clif_sendbgemblem_area(struct map_session_data *sd);
  void clif_sendbgemblem_single(int fd, struct map_session_data *sd);
@@ -2233,7 +2237,7 @@ index cbabd1eaf..6561c3948 100644
  	int npc_num_area; // number of npc with a trigger area on the map
  	int npc_num_warp; // number of warp npc on the map
 diff --git a/src/map/npc.hpp b/src/map/npc.hpp
-index 0ce0c96a0..bcb56ff5e 100644
+index 0d9ab9285..59637c398 100644
 --- a/src/map/npc.hpp
 +++ b/src/map/npc.hpp
 @@ -68,7 +68,7 @@ struct npc_data {
@@ -2246,10 +2250,10 @@ index 0ce0c96a0..bcb56ff5e 100644
  			int timerid,timeramount,rid;
  			t_tick timertick;
 diff --git a/src/map/pc.cpp b/src/map/pc.cpp
-index ad3754235..4fff71dfe 100755
+index 9df965886..0b3956948 100755
 --- a/src/map/pc.cpp
 +++ b/src/map/pc.cpp
-@@ -5309,7 +5309,12 @@ int pc_useitem(struct map_session_data *sd,int n)
+@@ -5311,7 +5311,12 @@ int pc_useitem(struct map_session_data *sd,int n)
  		}
  		return 0;/* regardless, effect is not run */
  	}
@@ -2263,7 +2267,7 @@ index ad3754235..4fff71dfe 100755
  	sd->itemid = item.nameid;
  	sd->itemindex = n;
  	if(sd->catch_target_class != PET_CATCH_FAIL) //Abort pet catching.
-@@ -9380,6 +9385,12 @@ bool pc_candrop(struct map_session_data *sd, struct item *item)
+@@ -9422,6 +9427,12 @@ bool pc_candrop(struct map_session_data *sd, struct item *item)
  		return false;
  	if( !pc_can_give_items(sd) || sd->sc.cant.drop) //check if this GM level can drop items
  		return false;
@@ -2276,7 +2280,7 @@ index ad3754235..4fff71dfe 100755
  	return (itemdb_isdropable(item, pc_get_group_level(sd)));
  }
  
-@@ -13057,6 +13068,27 @@ void pc_set_costume_view(struct map_session_data *sd) {
+@@ -13099,6 +13110,27 @@ void pc_set_costume_view(struct map_session_data *sd) {
  		clif_changelook(&sd->bl, LOOK_ROBE, sd->status.robe);
  }
  
@@ -2305,7 +2309,7 @@ index ad3754235..4fff71dfe 100755
  	uint32 date = date_get(DT_YYYYMMDD);
  
 diff --git a/src/map/pc.hpp b/src/map/pc.hpp
-index e73bec255..dc0df0318 100644
+index bd1408cfe..c9ea8315e 100644
 --- a/src/map/pc.hpp
 +++ b/src/map/pc.hpp
 @@ -311,6 +311,10 @@ struct map_session_data {
@@ -2337,7 +2341,7 @@ index e73bec255..dc0df0318 100644
  	unsigned int bg_id;
  
  #ifdef SECURE_NPCTIMEOUT
-@@ -1333,6 +1346,8 @@ void pc_show_questinfo_reinit(struct map_session_data *sd);
+@@ -1334,6 +1347,8 @@ void pc_show_questinfo_reinit(struct map_session_data *sd);
  
  bool pc_job_can_entermap(enum e_job jobid, int m, int group_lv);
  
@@ -2347,10 +2351,10 @@ index e73bec255..dc0df0318 100644
  int pc_level_penalty_mod(int level_diff, uint32 mob_class, enum e_mode mode, int type);
  #endif
 diff --git a/src/map/script.cpp b/src/map/script.cpp
-index 6acc44959..a6d1fc95c 100644
+index 7602f068b..0c31b83c7 100644
 --- a/src/map/script.cpp
 +++ b/src/map/script.cpp
-@@ -5787,7 +5787,155 @@ BUILDIN_FUNC(warpguild)
+@@ -5796,7 +5796,155 @@ BUILDIN_FUNC(warpguild)
  
  	return SCRIPT_CMD_SUCCESS;
  }
@@ -2506,7 +2510,7 @@ index 6acc44959..a6d1fc95c 100644
  /*==========================================
   * Force Heal a player (hp and sp)
   *------------------------------------------*/
-@@ -19581,13 +19729,10 @@ BUILDIN_FUNC(waitingroom2bg)
+@@ -19544,13 +19692,10 @@ BUILDIN_FUNC(waitingroom2bg)
  	struct npc_data *nd;
  	struct chat_data *cd;
  	const char *map_name, *ev = "", *dev = "";
@@ -2522,7 +2526,7 @@ index 6acc44959..a6d1fc95c 100644
  
  	if( nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL )
  	{
-@@ -19604,15 +19749,17 @@ BUILDIN_FUNC(waitingroom2bg)
+@@ -19567,15 +19712,17 @@ BUILDIN_FUNC(waitingroom2bg)
  
  	x = script_getnum(st,3);
  	y = script_getnum(st,4);
@@ -2544,7 +2548,7 @@ index 6acc44959..a6d1fc95c 100644
  	{ // Creation failed
  		script_pushint(st,0);
  		return SCRIPT_CMD_SUCCESS;
-@@ -19684,7 +19831,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
+@@ -19647,7 +19794,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
  /// @author [secretdataz]
  BUILDIN_FUNC(bg_create) {
  	const char *map_name, *ev = "", *dev = "";
@@ -2553,7 +2557,7 @@ index 6acc44959..a6d1fc95c 100644
  
  	map_name = script_getstr(st, 2);
  	if (strcmp(map_name, "-") != 0 && (mapindex = mapindex_name2id(map_name)) == 0)
-@@ -19695,15 +19842,22 @@ BUILDIN_FUNC(bg_create) {
+@@ -19658,15 +19805,22 @@ BUILDIN_FUNC(bg_create) {
  
  	x = script_getnum(st, 3);
  	y = script_getnum(st, 4);
@@ -2580,7 +2584,7 @@ index 6acc44959..a6d1fc95c 100644
  	return SCRIPT_CMD_SUCCESS;
  }
  
-@@ -19752,6 +19906,644 @@ BUILDIN_FUNC(bg_join) {
+@@ -19715,6 +19869,644 @@ BUILDIN_FUNC(bg_join) {
  	return SCRIPT_CMD_SUCCESS;
  }
  
@@ -3225,7 +3229,7 @@ index 6acc44959..a6d1fc95c 100644
  BUILDIN_FUNC(bg_team_setxy)
  {
  	struct battleground_data *bg;
-@@ -19773,7 +20565,9 @@ BUILDIN_FUNC(bg_warp)
+@@ -19736,7 +20528,9 @@ BUILDIN_FUNC(bg_warp)
  
  	bg_id = script_getnum(st,2);
  	map_name = script_getstr(st,3);
@@ -3236,7 +3240,7 @@ index 6acc44959..a6d1fc95c 100644
  		return SCRIPT_CMD_SUCCESS; // Invalid Map
  	x = script_getnum(st,4);
  	y = script_getnum(st,5);
-@@ -19831,7 +20625,7 @@ BUILDIN_FUNC(bg_leave)
+@@ -19794,7 +20588,7 @@ BUILDIN_FUNC(bg_leave)
  BUILDIN_FUNC(bg_destroy)
  {
  	int bg_id = script_getnum(st,2);
@@ -3245,7 +3249,7 @@ index 6acc44959..a6d1fc95c 100644
  	return SCRIPT_CMD_SUCCESS;
  }
  
-@@ -19911,6 +20705,15 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19874,6 +20668,15 @@ BUILDIN_FUNC(bg_get_data)
  		mapreg_setreg(add_str("$@arenamemberscount"), j);
  		script_pushint(st, j);
  		break;
@@ -3261,7 +3265,7 @@ index 6acc44959..a6d1fc95c 100644
  	default:
  		ShowError("script:bg_get_data: unknown data identifier %d\n", type);
  		break;
-@@ -19919,6 +20722,21 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19882,6 +20685,21 @@ BUILDIN_FUNC(bg_get_data)
  	return SCRIPT_CMD_SUCCESS;
  }
  
@@ -3283,7 +3287,7 @@ index 6acc44959..a6d1fc95c 100644
  /*==========================================
   * Instancing System
   *------------------------------------------*/
-@@ -24951,7 +25769,31 @@ struct script_function buildin_func[] = {
+@@ -24967,7 +25785,31 @@ struct script_function buildin_func[] = {
  	BUILDIN_DEF(bg_getareausers,"isiiii"),
  	BUILDIN_DEF(bg_updatescore,"sii"),
  	BUILDIN_DEF(bg_join,"i????"),
@@ -3317,7 +3321,7 @@ index 6acc44959..a6d1fc95c 100644
  	// Instancing
  	BUILDIN_DEF(instance_create,"s??"),
 diff --git a/src/map/script_constants.hpp b/src/map/script_constants.hpp
-index 42cc9e049..b38468245 100644
+index 8547d9135..706f72b54 100644
 --- a/src/map/script_constants.hpp
 +++ b/src/map/script_constants.hpp
 @@ -457,6 +457,11 @@
@@ -3333,10 +3337,10 @@ index 42cc9e049..b38468245 100644
  	/* setcell types */
  	export_constant(CELL_WALKABLE);
 diff --git a/src/map/skill.cpp b/src/map/skill.cpp
-index 0cca13f19..0af540128 100755
+index 127106761..52ca87135 100755
 --- a/src/map/skill.cpp
 +++ b/src/map/skill.cpp
-@@ -737,6 +737,9 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
+@@ -800,6 +800,9 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
  
  	if (skill_blockpc_get(sd, skill_id) != -1){
  		clif_skill_fail(sd,skill_id,USESKILL_FAIL_SKILLINTERVAL,0);
@@ -3346,7 +3350,7 @@ index 0cca13f19..0af540128 100755
  		return true;
  	}
  
-@@ -827,10 +830,14 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
+@@ -890,10 +893,14 @@ bool skill_isNotOk(uint16 skill_id, struct map_session_data *sd)
  			break;
  		case GD_EMERGENCYCALL:
  		case GD_ITEMEMERGENCYCALL:
@@ -3363,7 +3367,7 @@ index 0cca13f19..0af540128 100755
  			)	{
  				clif_skill_fail(sd,skill_id,USESKILL_FAIL_LEVEL,0);
  				return true;
-@@ -8794,33 +8801,45 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
+@@ -8838,34 +8845,47 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
  	// New guild skills [Celest]
  	case GD_BATTLEORDER:
  	case GD_REGENERATION:
@@ -3406,21 +3410,25 @@ index 0cca13f19..0af540128 100755
  			int8 dx[9] = {-1, 1, 0, 0,-1, 1,-1, 1, 0};
  			int8 dy[9] = { 0, 0, 1,-1, 1,-1,-1, 1, 0};
  			uint8 j = 0, calls = 0, called = 0;
- 			struct guild *g;
+-			struct guild *g;
++			struct guild *g = NULL;
++			struct battleground_data *bg = NULL;
 +			int max_member;
  			// i don't know if it actually summons in a circle, but oh well. ;P
 -			g = sd?sd->guild:guild_search(status_get_guild_id(src));
+-			if (!g)
 +			if (map_getmapflag(src->m, MF_BATTLEGROUND) && bg_team_get_id(src)) {
-+				g = bg_guild_get(sd->bg_id);
++				bg = bg_team_search(sd->bg_id);
 +				max_member = MAX_BG_MEMBERS;
 +			} else {
 +				g = sd?sd->guild:guild_search(status_get_guild_id(src));
 +				max_member = g->max_member;
 +			}
- 			if (!g)
++			if (!g && !bg)
  				break;
  
-@@ -8833,7 +8852,7 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
+ 			if (skill_id == GD_ITEMEMERGENCYCALL)
+@@ -8877,11 +8897,11 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
  				}
  
  			clif_skill_nodamage(src,bl,skill_id,skill_lv,1);
@@ -3428,8 +3436,14 @@ index 0cca13f19..0af540128 100755
 +			for (i = 0; i < max_member && (!calls || (calls && called < calls)); i++, j++) {
  				if (j > 8)
  					j = 0;
- 				if ((dstsd = g->member[i].sd) != NULL && sd != dstsd && !dstsd->state.autotrade && !pc_isdead(dstsd)) {
-@@ -8847,8 +8866,13 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
+-				if ((dstsd = g->member[i].sd) != NULL && sd != dstsd && !dstsd->state.autotrade && !pc_isdead(dstsd)) {
+-					if (map_getmapflag(dstsd->bl.m, MF_NOWARP) && !map_flag_gvg2(dstsd->bl.m))
++				if ((dstsd = bg?bg->members[i].sd:g->member[i].sd) != NULL && sd != dstsd && !dstsd->state.autotrade && !pc_isdead(dstsd)) {
++					if (map_getmapflag(dstsd->bl.m, MF_NOWARP) && !map_flag_gvg2(dstsd->bl.m) && !bg)
+ 						continue;
+ 					if (!pc_job_can_entermap((enum e_job)dstsd->status.class_, src->m, dstsd->group_level))
+ 						continue;
+@@ -8891,8 +8911,13 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
  						called++;
  				}
  			}
@@ -3445,7 +3459,7 @@ index 0cca13f19..0af540128 100755
  		}
  		break;
  
-@@ -15337,14 +15361,17 @@ bool skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_i
+@@ -15381,14 +15406,17 @@ bool skill_check_condition_castbegin(struct map_session_data* sd, uint16 skill_i
  		case GD_BATTLEORDER:
  		case GD_REGENERATION:
  		case GD_RESTORE:
@@ -3465,7 +3479,7 @@ index 0cca13f19..0af540128 100755
  				return false;
  			break;
  
-@@ -16028,7 +16055,13 @@ bool skill_check_condition_castend(struct map_session_data* sd, uint16 skill_id,
+@@ -16072,7 +16100,13 @@ bool skill_check_condition_castend(struct map_session_data* sd, uint16 skill_id,
  		if( !require.itemid[i] )
  			continue;
  		index[i] = pc_search_inventory(sd,require.itemid[i]);
@@ -3481,7 +3495,7 @@ index 0cca13f19..0af540128 100755
  				clif_skill_fail(sd,skill_id,USESKILL_FAIL_HOLYWATER,0); //Holy water is required.
  			else if( require.itemid[i] == ITEMID_RED_GEMSTONE )
 diff --git a/src/map/storage.cpp b/src/map/storage.cpp
-index 8e376e3db..c67667b73 100644
+index 328ddd99d..aeabbb3cd 100644
 --- a/src/map/storage.cpp
 +++ b/src/map/storage.cpp
 @@ -13,6 +13,7 @@
@@ -3492,7 +3506,7 @@ index 8e376e3db..c67667b73 100644
  
  #include "battle.hpp"
  #include "chrif.hpp"
-@@ -781,6 +782,13 @@ bool storage_guild_additem(struct map_session_data* sd, struct s_storage* stor,
+@@ -784,6 +785,13 @@ bool storage_guild_additem(struct map_session_data* sd, struct s_storage* stor,
  		return false;
  	}
  
@@ -3507,7 +3521,7 @@ index 8e376e3db..c67667b73 100644
  		for(i = 0; i < stor->max_amount; i++) {
  			if(compare_item(&stor->u.items_guild[i], item_data)) {
 diff --git a/src/map/trade.cpp b/src/map/trade.cpp
-index a04712934..6eeab95cd 100644
+index 3316b9393..963ceaccb 100644
 --- a/src/map/trade.cpp
 +++ b/src/map/trade.cpp
 @@ -8,6 +8,7 @@
@@ -3518,7 +3532,7 @@ index a04712934..6eeab95cd 100644
  
  #include "atcommand.hpp"
  #include "battle.hpp"
-@@ -390,7 +391,12 @@ void trade_tradeadditem(struct map_session_data *sd, short index, short amount)
+@@ -393,7 +394,12 @@ void trade_tradeadditem(struct map_session_data *sd, short index, short amount)
  		clif_tradeitemok(sd, index+2, 1);
  		return;
  	}
@@ -3533,7 +3547,7 @@ index a04712934..6eeab95cd 100644
  		clif_displaymessage(sd->fd, msg_txt(sd,293));
  		clif_tradeitemok(sd, index+2, 1);
 diff --git a/src/map/unit.cpp b/src/map/unit.cpp
-index 58a1bfeca..80ef740c3 100644
+index b4c744dd5..2a9149ec2 100644
 --- a/src/map/unit.cpp
 +++ b/src/map/unit.cpp
 @@ -3234,6 +3234,7 @@ int unit_free(struct block_list *bl, clr_type clrtype)
