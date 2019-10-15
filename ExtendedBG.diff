@@ -14,14 +14,14 @@
  src/map/npc.hpp               |   2 +-
  src/map/pc.cpp                |  45 ++-
  src/map/pc.hpp                |  17 +-
- src/map/script.cpp            | 891 +++++++++++++++++++++++++++++++++++++++++-
+ src/map/script.cpp            | 896 +++++++++++++++++++++++++++++++++++++++++-
  src/map/script_constants.hpp  |   5 +
  src/map/skill.cpp             |  80 ++--
  src/map/storage.cpp           |   8 +
  src/map/trade.cpp             |   8 +-
  src/map/unit.cpp              |   1 +
  src/map/vending.cpp           |   4 +
- 23 files changed, 2555 insertions(+), 118 deletions(-)
+ 23 files changed, 2560 insertions(+), 118 deletions(-)
 
 diff --git a/conf/battle/battleground.conf b/conf/battle/battleground.conf
 index f6ca66e30..8642ebcc7 100644
@@ -2384,7 +2384,7 @@ index f0f820996..622280d7e 100644
  int pc_level_penalty_mod(int level_diff, uint32 mob_class, enum e_mode mode, int type);
  #endif
 diff --git a/src/map/script.cpp b/src/map/script.cpp
-index b9ad0f7c7..e8cde0e9b 100644
+index b9ad0f7c7..f05aa18c5 100644
 --- a/src/map/script.cpp
 +++ b/src/map/script.cpp
 @@ -5796,7 +5796,155 @@ BUILDIN_FUNC(warpguild)
@@ -2559,11 +2559,25 @@ index b9ad0f7c7..e8cde0e9b 100644
  /// for Aegis compatibility
  /// basically a specialized 'donpcevent', with the event specified as two arguments instead of one
  BUILDIN_FUNC(cmdothernpc)	// Added by RoVeRT
-@@ -12973,6 +13130,11 @@ BUILDIN_FUNC(flagemblem)
+@@ -12963,16 +13120,25 @@ BUILDIN_FUNC(flagemblem)
+ {
+ 	TBL_NPC* nd;
+ 	int g_id = script_getnum(st,2);
++	int flag = 0;
+ 
+ 	if(g_id < 0)
+ 		return SCRIPT_CMD_SUCCESS;
+ 
++	if( script_hasdata(st,3) )
++		flag = 1;
++
+ 	nd = (TBL_NPC*)map_id2nd(st->oid);
+ 	if( nd == NULL ) {
+ 		ShowError("script:flagemblem: npc %d not found\n", st->oid);
  	} else if( nd->subtype != NPCTYPE_SCRIPT ) {
  		ShowError("script:flagemblem: unexpected subtype %d for npc %d '%s'\n", nd->subtype, st->oid, nd->exname);
  	} else {
-+		if (map_getmapflag(nd->bl.m, MF_BATTLEGROUND)) {
++		if (flag) {
 +			nd->u.scr.bg_id = g_id;
 +			clif_guild_emblem_area(&nd->bl);
 +			return SCRIPT_CMD_SUCCESS;
@@ -2571,7 +2585,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  		bool changed = ( nd->u.scr.guild_id != g_id )?true:false;
  		nd->u.scr.guild_id = g_id;
  		clif_guild_emblem_area(&nd->bl);
-@@ -19550,13 +19712,10 @@ BUILDIN_FUNC(waitingroom2bg)
+@@ -19550,13 +19716,10 @@ BUILDIN_FUNC(waitingroom2bg)
  	struct npc_data *nd;
  	struct chat_data *cd;
  	const char *map_name, *ev = "", *dev = "";
@@ -2587,7 +2601,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  
  	if( nd == NULL || (cd = (struct chat_data *)map_id2bl(nd->chat_id)) == NULL )
  	{
-@@ -19573,15 +19732,17 @@ BUILDIN_FUNC(waitingroom2bg)
+@@ -19573,15 +19736,17 @@ BUILDIN_FUNC(waitingroom2bg)
  
  	x = script_getnum(st,3);
  	y = script_getnum(st,4);
@@ -2609,7 +2623,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  	{ // Creation failed
  		script_pushint(st,0);
  		return SCRIPT_CMD_SUCCESS;
-@@ -19653,7 +19814,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
+@@ -19653,7 +19818,7 @@ BUILDIN_FUNC(waitingroom2bg_single)
  /// @author [secretdataz]
  BUILDIN_FUNC(bg_create) {
  	const char *map_name, *ev = "", *dev = "";
@@ -2618,7 +2632,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  
  	map_name = script_getstr(st, 2);
  	if (strcmp(map_name, "-") != 0 && (mapindex = mapindex_name2id(map_name)) == 0)
-@@ -19664,15 +19825,22 @@ BUILDIN_FUNC(bg_create) {
+@@ -19664,15 +19829,22 @@ BUILDIN_FUNC(bg_create) {
  
  	x = script_getnum(st, 3);
  	y = script_getnum(st, 4);
@@ -2645,7 +2659,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  	return SCRIPT_CMD_SUCCESS;
  }
  
-@@ -19721,6 +19889,644 @@ BUILDIN_FUNC(bg_join) {
+@@ -19721,6 +19893,644 @@ BUILDIN_FUNC(bg_join) {
  	return SCRIPT_CMD_SUCCESS;
  }
  
@@ -3290,7 +3304,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  BUILDIN_FUNC(bg_team_setxy)
  {
  	struct battleground_data *bg;
-@@ -19742,7 +20548,9 @@ BUILDIN_FUNC(bg_warp)
+@@ -19742,7 +20552,9 @@ BUILDIN_FUNC(bg_warp)
  
  	bg_id = script_getnum(st,2);
  	map_name = script_getstr(st,3);
@@ -3301,7 +3315,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  		return SCRIPT_CMD_SUCCESS; // Invalid Map
  	x = script_getnum(st,4);
  	y = script_getnum(st,5);
-@@ -19800,7 +20608,7 @@ BUILDIN_FUNC(bg_leave)
+@@ -19800,7 +20612,7 @@ BUILDIN_FUNC(bg_leave)
  BUILDIN_FUNC(bg_destroy)
  {
  	int bg_id = script_getnum(st,2);
@@ -3310,7 +3324,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  	return SCRIPT_CMD_SUCCESS;
  }
  
-@@ -19880,6 +20688,15 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19880,6 +20692,15 @@ BUILDIN_FUNC(bg_get_data)
  		mapreg_setreg(add_str("$@arenamemberscount"), j);
  		script_pushint(st, j);
  		break;
@@ -3326,7 +3340,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  	default:
  		ShowError("script:bg_get_data: unknown data identifier %d\n", type);
  		break;
-@@ -19888,6 +20705,21 @@ BUILDIN_FUNC(bg_get_data)
+@@ -19888,6 +20709,21 @@ BUILDIN_FUNC(bg_get_data)
  	return SCRIPT_CMD_SUCCESS;
  }
  
@@ -3348,7 +3362,7 @@ index b9ad0f7c7..e8cde0e9b 100644
  /*==========================================
   * Instancing System
   *------------------------------------------*/
-@@ -24882,7 +25714,32 @@ struct script_function buildin_func[] = {
+@@ -24882,7 +25718,33 @@ struct script_function buildin_func[] = {
  	BUILDIN_DEF(bg_getareausers,"isiiii"),
  	BUILDIN_DEF(bg_updatescore,"sii"),
  	BUILDIN_DEF(bg_join,"i????"),
@@ -3379,6 +3393,7 @@ index b9ad0f7c7..e8cde0e9b 100644
 +	BUILDIN_DEF(viewpointmap, "siiiii"),
 +	BUILDIN_DEF(bg_monster_reveal,"iii"),
 +	BUILDIN_DEF(donpceventall,"s"),
++	BUILDIN_DEF2(flagemblem, "flagemblembg", "ii"),
  
  	// Instancing
  	BUILDIN_DEF(instance_create,"s??"),
