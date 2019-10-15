@@ -45,7 +45,7 @@ OnTeam3Die:
 	if ($@BG_Status == 1 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Tierra_TI") {
 		if (killerrid == 0) end;
 		// Killed Position
-		getmapxy .@m$, .@x, .@y, 0;
+		getmapxy .@m$, .@x, .@y, BL_PC;
 		set .@Bid, getcharid(4);
 		// Current Skulls
 		set .@id8965,countitem(8965);

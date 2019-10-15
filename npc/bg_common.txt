@@ -145,7 +145,7 @@ OnBGSizeCommand:
 	end;
 // @bghappyhour
 OnBGHHCommand:
-	if (.HappyHour == ) {
+	if (.HappyHour == 0) {
 		message strcharinfo(0),"Happy Hour is currently disabled.";
 		end;
 	}
