@@ -296,7 +296,7 @@ region_8,75,47,2	script	Bravo Base::TIF_Croix	GUILD_FLAG,{
 OnEmblemTI:
 	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_TI")
 		end;
-	flagemblem $@BG_Team2;
+	flagemblembg $@BG_Team2,1;
 	end;
 }
 
@@ -307,7 +307,7 @@ region_8,24,47,6	script	Alpha Base::TIF_Guillaume	GUILD_FLAG,{
 OnEmblemTI:
 	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_TI")
 		end;
-	flagemblem $@BG_Team1;
+	flagemblembg $@BG_Team1,1;
 	end;
 }
 
@@ -318,7 +318,7 @@ region_8,47,75,4	script	Charlie Base::TIF_Traitor	GUILD_FLAG,{
 OnEmblemTI:
 	if ($@BG_Status != 1 || getvariableofnpc(.BG_Arena$,"BG_Queue_Join") != "Tierra_TI")
 		end;
-	flagemblem $@BG_Team3;
+	flagemblembg $@BG_Team3,1;
 	end;
 }
 

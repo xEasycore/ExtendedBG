@@ -222,7 +222,7 @@ OnMatchEnd:
 	//donpcevent "GEoSCBW::OnDisable";
 	donpcevent "GEoSSBW::OnDisable";
 	donpcevent "CEoSNBW::OnDisable";
-	donpcevent "CEoSCBW::OnDisable";
+	//donpcevent "CEoSCBW::OnDisable";
 	donpcevent "CEoSSBW::OnDisable";
 	end;
 

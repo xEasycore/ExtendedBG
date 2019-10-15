@@ -875,7 +875,7 @@ schg_cas06,17,45,0	script	Castle#LF_sc06_1::LF_sc06_1	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -907,7 +907,7 @@ schg_cas06,111,46,4	script	Castle#LF_sc06_3::LF_sc06_2	GUILD_FLAG,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1082,7 +1082,7 @@ schg_cas07,235,222,0	script	Andlangr#LF_sc07_1::LF_sc07_1	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1302,7 +1302,7 @@ schg_cas08,335,305,0	script	Vidblainn#LF_sc08_1::LF_sc08_1	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1334,7 +1334,7 @@ schg_cas08,283,206,2	script	Vidblainn#LF_sc08_11::LF_sc08_2	GUILD_FLAG,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1546,7 +1546,7 @@ arug_cas06,72,176,0	script	Mardol#LF_ar06_1::LF_ar06_1	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1578,7 +1578,7 @@ arug_cas06,92,126,4	script	Mardol#LF_ar06_3::LF_ar06_2	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1748,7 +1748,7 @@ arug_cas07,216,92,0	script	Cyr#LF_ar07_1::LF_ar07_1	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1782,7 +1782,7 @@ arug_cas07,129,178,4	script	Cyr#LF_ar07_13::LF_ar07_2	GUILD_FLAG,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -1997,7 +1997,7 @@ arug_cas08,45,158,0	script	Horn#LF_ar08_01::LF_ar08_01	HIDDEN_NPC,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
@@ -2028,7 +2028,7 @@ arug_cas08,148,103,4	script	Horn#LF_ar08_10::LF_ar08_02	GUILD_FLAG,{
 
 OnEmblemConquest:
 	if( $@BG_Status != 0 && getvariableofnpc(.BG_Arena$,"BG_Queue_Join") == "Conquest" )
-		flagemblem getvariableofnpc(.Defender,"Conquest");
+		flagemblembg getvariableofnpc(.Defender,"Conquest"),1;
 	end;
 }
 
