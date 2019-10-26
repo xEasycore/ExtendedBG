@@ -287,7 +287,7 @@ OnClock2000:
 OnEndHappyHour:
 OnClock1800:
 OnClock2200:
-	if (getbattleflag("bg_eAmod_mode" || .HappyHour == 0) == 0) end;
+	if (getbattleflag("bg_eAmod_mode") == 0 || .HappyHour == 0) end;
 	set .HWE, 0;
 	announce "-- Battleground Happy Hour is over --",0,0x00BFFF;
 	setbattleflag "bg_reward_rates",100; // Normal Rates
